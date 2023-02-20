@@ -10,7 +10,7 @@ https://gitlab.com/wsvanloon/multiview
 
 ### Manual for Running the Simulation in R in a cluster computer environment
 
-There are two types of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. To run one of the R syntaxes the shell scripts are used to initialize the process.
+There are two types of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. The shell scripts are used to initialize the process of running the R Syntaxes.
 
 Note that before personal use of the R syntaxes and batch scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
 
