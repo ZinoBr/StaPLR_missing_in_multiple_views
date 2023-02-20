@@ -14,11 +14,11 @@ There are two types of documents. The first type are the R syntaxes (.R files), 
 
 Note that before personal use of the R syntaxes and shell scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
 
-  - Source code for use of functions and other R objects (e.g., 'source("/home/.../MVS.R")') -->  Assign the correct folder and file name containing the needed function or object
+  - Source code for use of functions and other R objects (e.g., 'source("/home/.../MVS.R")') ->  Assign the correct folder and file name containing the needed function or object
 
-  - File name for saving the results --> assign the correct repository
+  - File name for saving the results -> assign the correct repository
 
-  - batch scripts --> Check if assigned memory is sufficient. If not, increase slightly and try again.
+  - shell scripts -> Check if assigned memory is sufficient. If not, increase slightly and try again.
  
 ### Files
  
@@ -84,13 +84,13 @@ Note that before personal use of the R syntaxes and shell scripts, both must be 
 
 ### Required R packages
 
-    - missForest
+    * missForest
     
-    - mice
+    * mice
     
-    - foreach
+    * foreach
     
-    - multiview (  devtools::install_gitlab("wsvanloon/multiview") )
+    * multiview (  devtools::install_gitlab("wsvanloon/multiview") )
 
 ### References
 
