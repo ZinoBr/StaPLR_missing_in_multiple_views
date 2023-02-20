@@ -1,15 +1,16 @@
 # missingness_overlap_StaPLR
 
 ### Description
+This repository contains the R syntax for a simulation study comparing the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020), a method for predicting a binary outcome when using multi-view structured data when missing values occur in multiple views by row. 
 
-This repository provides R syntax for a simulation study comparing the performance of StaPLR (Stacked Penalized Logistic Regression), a method for predicting a binary outcome when using multi-view structured data, when missing values occur in multiple views by row. Imputation methods are applied on the feature level (random forest & mean imputation) and the meta level (meta mean imputation, etc.) and compared with each other in respect to prediction accuracy, computation time, and view selection. The comparison also includes the performance under complete case analysis and complete data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster). 
+Imputation methods are applied at the feature level (Random Forest & Mean Imputation) and at the meta level (Meta Mean Imputation, etc.) and compared in terms of prediction accuracy, computation time, and view selection. The comparison also includes performance on full case analysis and full data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
 
-Note that all syntaxes are modified versions of the original R syntaxes creaty by Wouter van der Laan and relate to the study conducted and reported in Wouter et al. (2020). The repository to the original R syntaxes and package for using StaPLR with multi-view structured data can be found here: 
+Note that all syntaxes are modified versions of the original R syntaxes created by Wouter van Loon and relate to the studies conducted and reported in Van Loon et al. (2020 & 2022). The repository to the original R syntaxes and package for using StaPLR with multi-view structured data can be found here: 
 https://gitlab.com/wsvanloon/multiview
 
 ### Manual for Running the Simulation in R in a cluster computer environment
 
-This repository contains two type of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are batch scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. To run one of the R syntaxes the batch files are used to initialize the process.
+There are two types of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. To run one of the R syntaxes the shell scripts are used to initialize the process.
 
 Note that before personal use of the R syntaxes and batch scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
 
@@ -21,21 +22,21 @@ Note that before personal use of the R syntaxes and batch scripts, both must be 
  
 ### Files
  
-   Functions from the multiview package (© Wouter van der Laan)
+   Functions from the multiview package ( Copyright (C) 2018-2021  Wouter van Loon )
 
-    # kFolds.R  -  A function used for 
+    # kFolds.R  -  Function to create folds
     
-    # learn.R  -  A function used for 
+    # learn.R  -  Train a learner on multi-view input data
     
-    # blockcorrelate.R  -  Function to generate features with a block-correlation structure
+    # blockcorrelate.R  -  Generate features with a block-correlation structure
 
-    # sim_normal_views_beta.R  -  Code to simulate multi-view structured data. For more details, inspect the functuon syntax.
+    # sim_normal_views_beta.R  -  Simulate multi-view structured data
     
     # StaPLR.R  -  StaPLR functions
     
     # MVS.R  -  MVS function wich appplies StaPLR for high-dimensional data with n dimensions > 2
     
-    # imputation_methods.R  -  Imputation methods used
+    # imputation_methods.R  -  Imputation methods used in combination with StaPLR
 
   Function for inducing missingness in data
 
@@ -45,7 +46,7 @@ Note that before personal use of the R syntaxes and batch scripts, both must be 
 
     # miss.conditions.rds  -  Combinations of varying numbers of views with two values for missingness proportion for each view (0.3, 0.7)
 
-  Simulations using functions at the feature and meta level (modified from original syntaxes by Wouter van der Laan)
+  Simulations using functions at the feature and meta level (modified from original syntaxes by © Wouter van Loon)
 
     # CDA.R  -  Complete data analysis on a SLURM HPC cluster
     
@@ -63,7 +64,7 @@ Note that before personal use of the R syntaxes and batch scripts, both must be 
     
     # meta_cv.R  -  meta-level PMM on a SLURM HPC cluster (strategy 2)
 
-  Batch scripts
+  Shell scripts
 
     # CDA.txt
     
@@ -80,3 +81,9 @@ Note that before personal use of the R syntaxes and batch scripts, both must be 
     # meta_pmm.txt
     
     # meta_cv.txt
+
+### References
+
+Van Loon, W., Fokkema, M., Szabo, B., & de Rooij, M. (2020). Stacked penalized logistic regression for selecting views in multi-view learning. Information Fusion, 61, 113–123. https://doi.org/10.1016/j.inffus.2020.03.007
+
+Van Loon, W., Fokkema, M., & de Rooij, M. (2022). Imputation of missing values in multi-view data. https:// doi.org/10.48550/ arxiv.2210.14484
