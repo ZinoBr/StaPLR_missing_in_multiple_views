@@ -1,18 +1,18 @@
 # missingness_overlap_StaPLR
 
 ### Description
-This repository contains the R syntax for a simulation study comparing the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020), a method for predicting a binary outcome when using multi-view structured data when missing values occur in multiple views by row. 
+This repository contains R syntax and shell scripts for a simulation study comparing the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020) combined with imputation methods in predicting a binary outcome in multi-view structured data when missing values occur in multiple views per row.
 
-Imputation methods are applied at the feature level (Random Forest & Mean Imputation) and at the meta level (Meta Mean Imputation, etc.) and compared in terms of prediction accuracy, computation time, and view selection. The comparison also includes performance on full case analysis and full data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
+The imputation methods used are applied at the feature level (Random Forest & Mean Imputation) or at the meta level (Meta Mean Imputation, etc.) and compared in terms of prediction accuracy, computation time and view selection. Finally, the methods are compared with performance on complete case analysis and complete data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
 
-Note that all syntaxes are modified versions of the original R syntaxes created by Wouter van Loon and relate to the studies conducted and reported in Van Loon et al. (2020 & 2022). The repository to the original R syntaxes and package for using StaPLR with multi-view structured data can be found here: 
+Note that all R syntaxes are modified versions of syntaxes created by Wouter van Loon and relate to the studies conducted and reported in Van Loon et al. (2020 & 2022). The repository to some of the original R syntaxes and the 'multiview' package for using StaPLR with multi-view structured data can be found at: 
 https://gitlab.com/wsvanloon/multiview
 
 ### Manual for Running the Simulation in R in a cluster computer environment
 
-There are two types of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. The shell scripts are used to initialize the process of running the R Syntaxes.
+There are two types of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. Running one of the shell scripts initializes the process of running the according R Syntax.
 
-Note that before personal use of the R syntaxes and batch scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
+Note that before personal use of the R syntaxes and shell scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
 
   - Source code for use of functions and other R objects (e.g., 'source("/home/.../MVS.R")') -->  Assign the correct folder and file name containing the needed function or object
 
@@ -46,7 +46,7 @@ Note that before personal use of the R syntaxes and batch scripts, both must be 
 
     # miss.conditions.rds  -  Combinations of varying numbers of views with two values for missingness proportion for each view (0.3, 0.7)
 
-  Simulations using functions at the feature and meta level (modified from original syntaxes by © Wouter van Loon)
+  Simulations using functions at the feature and meta level (modified from original syntaxes by Wouter van Loon)
 
     # CDA.R  -  Complete data analysis on a SLURM HPC cluster
     
@@ -81,6 +81,16 @@ Note that before personal use of the R syntaxes and batch scripts, both must be 
     # meta_pmm.txt
     
     # meta_cv.txt
+
+### Required R packages
+
+    - missForest
+    
+    - mice
+    
+    - foreach
+    
+    - multiview (  devtools::install_gitlab("wsvanloon/multiview") )
 
 ### References
 
