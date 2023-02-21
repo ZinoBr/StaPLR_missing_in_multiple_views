@@ -8,7 +8,6 @@
 #SBATCH --output=sim_study_%a.out 
 #SBATCH --error=sim_study_%a.err 
 #SBATCH --array=1-500
-#SBATCH --mail-user z.d.brystowski@umail.leidenuniv.nl
 
 module load R/4.0.5-foss-2020b 
 
