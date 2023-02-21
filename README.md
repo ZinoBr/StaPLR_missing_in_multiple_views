@@ -14,7 +14,7 @@ There are two types of documents. The first type are the R syntaxes (.R files), 
 
 Note that before personal use of the R syntaxes and shell scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
 
-  - Source code for use of functions and other R objects (e.g., 'source("/home/.../MVS.R")') ->  Assign the correct folder and file name containing the needed function or object
+  - Source code for use of functions and other R objects (e.g., 'source("/ ... /MVS.R")') ->  Assign the correct folder and file name containing the needed function or object
 
   - File name for saving the results -> assign the correct repository
 
@@ -43,8 +43,12 @@ Note that before personal use of the R syntaxes and shell scripts, both must be 
     # generate_missingness.R  -  Function to induce missingness in the views defined. For more details, inspect the function syntax.
 
   Design matrix used for performing the simulations
+    
+    # Missingness.conditions.syntax.R  -  syntax to create design matrix and save it as object 'miss.conditions'
 
     # miss.conditions.rds  -  Combinations of varying numbers of views with two values for missingness proportion for each view (0.3, 0.7)
+    
+    # transform.listobj.to.vector.R  -  transforms list entries of the design matrix to a vector
 
   Simulations using functions at the feature and meta level (modified from original syntaxes by Wouter van Loon)
 
