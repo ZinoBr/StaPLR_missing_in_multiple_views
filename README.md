@@ -1,7 +1,7 @@
 # missingness_overlap_StaPLR
 
 ### Description
-This repository contains R syntax and shell scripts for a simulation study comparing the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020) combined with imputation methods in predicting a binary outcome in multi-view structured data when missing values occur in multiple views per row.
+This repository contains R syntaxes and shell scripts for a simulation study comparing the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020) combined with imputation methods in predicting a binary outcome in multi-view structured data when missing values occur in multiple views per row.
 
 The imputation methods used are applied at the feature level (Random Forest & Mean Imputation) or at the meta level (Meta Mean Imputation, etc.) and compared in terms of prediction accuracy, computation time and view selection. Finally, the methods are compared with performance on complete case analysis and complete data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
 
