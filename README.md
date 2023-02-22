@@ -5,7 +5,7 @@ This repository contains R syntaxes and shell scripts for a simulation study com
 
 The imputation methods used are applied at the feature level (Random Forest & Mean Imputation) or at the meta level (Meta Mean Imputation, etc.) and compared in terms of prediction accuracy, computation time and view selection. Also included in the comparison are full case analysis and full data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
 
-Note that all R syntaxes are modified versions of syntaxes created by Wouter van Loon and relate to the studies conducted and reported in Van Loon et al. (2020 & 2022). The repository to some of the original R syntaxes and the 'multiview' package for using StaPLR with multi-view structured data can be found at: 
+Note that the majority of the R syntaxes are modified versions of syntaxes created by Wouter van Loon and relate to the studies conducted and reported in Van Loon et al. (2020 & 2022). The repository to some of the original R syntaxes and the 'multiview' package for using StaPLR with multi-view structured data can be found at: 
 https://gitlab.com/wsvanloon/multiview
 
 ### Manual for Running the Simulation in R in a cluster computer environment
