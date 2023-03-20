@@ -131,7 +131,6 @@ generate_missingness =
           
         }
       }
-    }
     
     
     for (j in 1:length(views) ){
@@ -141,5 +140,6 @@ generate_missingness =
       
     }
     
+   }   
     return(data)
   }
