@@ -110,7 +110,7 @@ results$missing_prop <- miss.conditions$missing_prop[ conds$index.misscond[TID] 
 results$missing_view <- miss.conditions$missing_view[ conds$index.misscond[TID] ]
 results$noise_view <- conds$noise_view[TID]
 results$preds <- predict(meta_pmm_fit, complete_data$xtest)
-results$coefs <- coef(meta_pmm_fit)$`Level 2`[[1]][-1]
+results$coefs <-  coef(meta_pmm_fit)$`meta`[-1]
 results$ytest <- complete_data$ytest 
 results$ptest <- complete_data$ptest
 results$time <- time
