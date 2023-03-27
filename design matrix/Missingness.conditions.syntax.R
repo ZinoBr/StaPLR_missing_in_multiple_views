@@ -1,4 +1,4 @@
-# Combinations of selected views with missingness + proportions of missingness
+# Combinations of selected views with proportions of missingness
 
 # All possible combinations when number of views = 4
 missing_view <- list(1,
@@ -27,29 +27,36 @@ missing_prop <-   list(   c(0.3),
                           c( 0.3,  0.3,  0.3),
                           c( 0.3,  0.3,  0.7),
                           c( 0.3,  0.7,  0.3),
-                          c( 0.3,  0.7,  0.7),
+                          c( 0.7,  0.3,  0.3),
                           c( 0.7,  0.7,  0.3),
+                          c( 0.7,  0.3,  0.7),
+                          c( 0.3,  0.7,  0.7),
                           c( 0.7,  0.7,  0.7),
                           c( 0.3,  0.3,  0.3, 0.3),
+                          c( 0.3,  0.3,  0.3, 0.7),
                           c( 0.3,  0.3,  0.7, 0.3),
                           c( 0.3,  0.7,  0.3, 0.3),
+                          c( 0.7,  0.3,  0.3, 0.3),
+                          c( 0.3,  0.3,  0.7, 0.7),
                           c( 0.3,  0.7,  0.7, 0.3),
                           c( 0.7,  0.7,  0.3, 0.3),
-                          c( 0.7,  0.7,  0.7, 0.3),
-                          c( 0.3,  0.3,  0.3, 0.7),
-                          c( 0.3,  0.3,  0.7, 0.7),
                           c( 0.3,  0.7,  0.3, 0.7),
-                          c( 0.3,  0.7,  0.7, 0.7),
+                          c( 0.7,  0.3,  0.7, 0.3),
+                          c( 0.7,  0.3,  0.3, 0.7),
+                          c( 0.7,  0.7,  0.7, 0.3),
                           c( 0.7,  0.7,  0.3, 0.7),
+                          c( 0.7,  0.3,  0.7, 0.7),
+                          c( 0.3,  0.7,  0.7, 0.7),
                           c( 0.7,  0.7,  0.7, 0.7)
+                          
 )
 
 # All possible combinations of view selection and missing proportions under the condition n views = n missing prop.
 miss.conditions <- rbind(
   expand.grid( missing_view [1:4],  missing_prop [1:2]),
   expand.grid( missing_view [5:10], missing_prop [3:6]),
-  expand.grid( missing_view [11:14], missing_prop [7:12]),
-  expand.grid( missing_view [15],  missing_prop [13:24])
+  expand.grid( missing_view [11:14], missing_prop [7:14]),
+  expand.grid( missing_view [15],  missing_prop [15:30])
 )
 
 # Change names of list objects
@@ -57,4 +64,3 @@ names(miss.conditions) <- c("missing_view","missing_prop")
 
 # Save object
 saveRDS(miss.conditions, "miss.conditions.rds")
-
