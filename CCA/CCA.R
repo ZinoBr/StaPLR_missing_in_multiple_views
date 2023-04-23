@@ -37,6 +37,7 @@ seed_list <- sample(.Machine$integer.max/2, size = nrow(conds))
 
 # Get the SLURM task ID
 TID <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+# TID <- TID + 1000
 
 # Generate data
 set.seed(seed_list[TID])
@@ -69,42 +70,40 @@ complete_data <- sim_normal_views_beta(v = 4,
                                        abs_beta=abs_beta, 
                                        rw=0.5, 
                                        rb=0.2)
-
-
 # Generate missingness
 
+
 # View(s) for which missingness is applied
-missing_view <- transform.listobj.to.vector ( miss.conditions$missing_view[TID] )
+missing_view <- transform.listobj.to.vector ( miss.conditions$missing_view[conds$index.misscond[TID]] )
 
 # Missingness proportion for the selected view(s)
-prop_na <- transform.listobj.to.vector ( miss.conditions$missing_prop[TID] )
+prop_na <- transform.listobj.to.vector ( miss.conditions$missing_prop[conds$index.misscond[TID]] )
+
 
 # Generate list with predictor indeces for each view 
 
 view.predictors = list( c(1:5), c(6:55), c(56:555), c(556:5555) )
 
 # Use function to generate missingness in 'complete data'
+
 incomplete_data = complete_data
 
-incomplete_data$xtrain <- 
-  generate_missingness(data = complete_data$xtrain,
-                       n = n,
-                       prop_na = prop_na,
-                       views = missing_view,
-                       overlap = TRUE,
-                       view.pred = view.predictors )
+incomplete_data$xtrain <- generate_missingness(data = complete_data$xtrain,
+                                               n = n,
+                                               prop_na = prop_na,
+                                               views = missing_view,
+                                               overlap = TRUE,
+                                               view.pred = view.predictors )
 
-
-# Train a model using missForest imputation at the base level
 
 staplr_cca_mod = 
-function(id, view_index){
-  # Applies StaPLR with complete case analysis / list wise deletion
-  x <- id$xtrain[complete.cases(id$xtrain),]
-  y <- id$ytrain[complete.cases(id$xtrain)]
-  fit <- MVS(x, y, as.matrix(view_index))
-  return(fit)
-}
+  function(id, view_index){
+    # Applies StaPLR with complete case analysis (list wise deletion)
+    x <- id$xtrain[complete.cases(id$xtrain),]
+    y <- id$ytrain[complete.cases(id$xtrain)]
+    fit <- MVS(x, y, as.matrix(view_index))
+    return(fit)
+  }
 
 time <- system.time(cca_fit <- staplr_cca_mod(incomplete_data, view_index))
 
@@ -121,6 +120,7 @@ results$coefs <- coef(cca_fit)$`Level 2`[[1]][-1]
 results$ytest <- complete_data$ytest 
 results$ptest <- complete_data$ptest
 results$time <- time
+results$n_completecases <- dim(cca_fit$`Level 1`$CVs)[1]
 
 save(results, file=paste0("/ ... /CCA/", TID, ".RData"))
 warnings()
