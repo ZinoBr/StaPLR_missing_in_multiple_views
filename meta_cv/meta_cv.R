@@ -15,7 +15,7 @@ library(mice)
 library(foreach)
 
 # Repetitions
-reps <- 1:10
+reps <- 1:100
 
 # Sample size of complete data
 n <- 1000
