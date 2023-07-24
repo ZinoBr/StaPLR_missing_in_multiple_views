@@ -1,5 +1,5 @@
 ### Description
-The repository comprises R syntax and shell scripts designed for a simulation study that evaluates the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020) in combination with meta-level imputation methods.
+The repository comprises R syntax and shell scripts designed for a simulation study that evaluates the performance of Stacked Penalized Logistic Regression (StaPLR; Van Loon et al., 2020) in combination with meta-level imputation methods.
 
 The study explores the performance of StaPLR under varying conditions of missingness, utilizing four different meta-level imputation methods, as well as Complete Case Analysis and Complete Data Analysis. The evaluation focuses on view selection performance and prediction accuracy.
 
