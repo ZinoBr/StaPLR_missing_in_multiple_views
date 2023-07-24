@@ -1,18 +1,19 @@
-# missingness_overlap_StaPLR
-
 ### Description
-This repository contains R syntaxes and shell scripts for a simulation study comparing the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020) combined with imputation methods in predicting a binary outcome in multi-view structured data when missing values occur in multiple views per row.
+The repository comprises R syntax and shell scripts designed for a simulation study that evaluates the performance of Stacked Penalized Logistic Regression (StaPLR; Wouter et al., 2020) in combination with meta-level imputation methods.
 
-The imputation methods used are applied at the feature level (Random Forest & Mean Imputation) or at the meta level (Meta Mean Imputation, etc.) and compared in terms of prediction accuracy, computation time and view selection. Also included in the comparison are full case analysis and full data analysis. The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
+The study explores the performance of StaPLR under varying conditions of missingness, utilizing four different meta-level imputation methods, as well as Complete Case Analysis and Complete Data Analysis. The evaluation focuses on view selection performance and prediction accuracy.
 
-Note that the majority of the R syntaxes are modified versions of syntaxes created by Wouter van Loon and relate to the studies conducted and reported in Van Loon et al. (2020 & 2022). The repository to some of the original R syntaxes and the 'multiview' package for using StaPLR with multi-view structured data can be found at: 
+The R syntax is written for use in a cluster computer system (SLURM HPC cluster).
+
+Note that the majority of the R syntaxes have been adapted from the work of Wouter van Loon and are closely related to the studies conducted and reported in Van Loon et al. (2020 & 2022). For original R syntaxes and the 'multiview' package for utilizing StaPLR with multi-view structured data, please refer to the following repository:
+
 https://gitlab.com/wsvanloon/multiview
 
-### Manual for Running the Simulation in R in a cluster computer environment
+### Instruction for Running the Simulation in R in a cluster computer environment
 
-There are two types of documents. The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. Running one of the shell scripts initializes the process of running the according R Syntax.
+Two types of documents are provided: The first type are the R syntaxes (.R files), which provide the code for R to run the simulations and return the output in a file saved in the cluster computer environment used. The second type are shell scripts (.txt files) which are needed to assign the tasks of the R syntax to the available nodes of the cluster computer system. Running one of the shell scripts initializes the process of running the according R Syntax.
 
-Note that before personal use of the R syntaxes and shell scripts, both must be adjusted and the required R packages downloaded to the cluster computing environment. The required modifications include the following parts:
+Note that the R syntaxes and shell scripts must be adjusted (see below) and the required R packages downloaded to the cluster computing environment before using them. The required adjustments include the following parts:
 
   - Source code for use of functions and other R objects (e.g., 'source("/ ... /MVS.R")') ->  Assign the correct folder and file name containing the needed function or object
 
@@ -44,9 +45,11 @@ Note that before personal use of the R syntaxes and shell scripts, both must be 
 
   Design matrix used for performing the simulations
     
-    # Missingness.conditions.syntax.R  -  syntax to create design matrix and save it as object 'miss.conditions'
+    # Design Matrix.R  -  syntax to create design matrix and save it as object 'miss.conditions'
 
     # miss.conditions.rds  -  Combinations of varying numbers of views with two values for missingness proportion for each view (0.3, 0.7)
+
+  Helper function
     
     # transform.listobj.to.vector.R  -  transforms list entries of the design matrix to a vector
 
@@ -73,10 +76,6 @@ Note that before personal use of the R syntaxes and shell scripts, both must be 
     # CDA.txt
     
     # CCA.txt
-    
-    # forest.txt
-    
-    # mi.txt
     
     # meta_forest.txt
     
