@@ -1,145 +1,141 @@
-# Missingness function
+
+#' Generate missingness function
+#' 
+#' @param   data  Dataset
+#' @param   n  Number of observations
+#' @param   views  Object that specifies for which views missing values are to be generated
+#' @param   prop_na  Object with proportion(s) of missing values for each view included
+#' @param   overlap  Whether missing values between views should overlap
+#' @param   min.overlap  Minimum proportion of overlap between adjacent views if overlap == TRUE
+#' @param   view.predictors  List of indices of predictors for each view
 
 
-# Function ####
-
-# Define the indeces of predictors for each view
-# view.pred = list( c(1:5), c(6:55), c(56:555), c(556:5555) )
-
-generate_missingness = 
+generate_missingness <- function(  data,
+                                      n,
+                                      views,
+                                      prop_na,
+                                      overlap = TRUE,
+                                      min.overlap = 0.5,
+                                      view.pred  ) {
+# One view alone
+    
   
-  function( data,
-            n,
-            prop_na,
-            views,
-            overlap = FALSE,
-            view.pred  )
-  {
-    # ARGUMENTS
+if ( length( views ) == 1 ) {
+  
+    # Sample indeces (sampling with replacement)
+    indices <- sample( n * prop_na )
+    # Assign missing values to selected observations
+    data[indices, view.pred[[views]]] <- NA  
+  }
+
     
-    # data : dataset
-    # n : number of observations
-    # prop_na : Proportion of missing values; Option are to enter one missingness proportion for all view, or a vector of missingness proportions with length = number of views
-    # views : Views included
-    # overlap : whether missing values between views can overlap. If TRUE, overlap of missing values is 50% between adjacent views.
-    # view.predictors : list of indices of predictors for each view
+# Multiple views with overlap
     
-    if (length(views) == 1) {
-      
-      # Sample indeces (sampling with replacement)
-      ind = sample(n * prop_na , replace = TRUE)
-      
-      # Assign missing values to selected observations
-      data[ind , view.pred[[views]]] <- NA
-      
-    }
     
-    if (length(views) > 1) {
+if ( length( views ) > 1 & overlap == TRUE) {
+  
+  # Create list object to collect indices for each view
+  list_indeces <- list()
+  # Create a pool to sample from
+  pool <- 1 : n
+  # Sample indices (sampling without replacement)
+  indices <- sample( pool, n * prop_na[1] )
+  
+  for ( i in seq_len( length( views ) ) ) {
       
-      if (overlap == TRUE) {
-        
-        # Create list object to collect indeces for each view
-        list_indeces = list()
-        
-        # Create a pool to sample from
-        pool = 1:n
-        
-        # Sample indeces (sampling without replacement)
-        ind = sample(pool , n * prop_na[1])
-        
-        for (i in 1:length(views)) {
+     if ( i > 1 ) { 
+       
+       if( prop_na[i] >= prop_na[i - 1] ) {
+
+          # Determine the number of observations to sample
+          n_indices <- n * prop_na[i]
+          # Sample overlap indices as half of the indices used in preceding view 
+          overlap_indices <- sample(indices, length( indices ) * min.overlap )
+          # Subtract the number of overlap indices
+          n_indices <- n_indices - length( overlap_indices )
           
-          if (i == 1) {
+          # If n_indices is smaller than the pool without indices from preceding view:
+          if ( n_indices <= length( setdiff( pool, indices ) ) ) {
+          
+            # Sample from the remaining pool
+            remaining_indices <- sample( setdiff( pool, indices ), n_indices ) 
+            # Combine sampled indices
+            indices <- c( overlap_indices, remaining_indices )  
+           
+          # Else, sample additional indices used in preceding view, and then sample remaining indices
+          } else {
             
-            # Indeces for first view is equal to indeces sampled beforehand
-            ind_mult = ind
+            # Calculate absolute difference between n_indices and remaining pool
+            diff <- abs( n_indices - length( setdiff( pool, indices ) ) )
+            # Sample additional indices from indices of preceding view that were not sampled yet
+            addit_overlap <- sample( setdiff(indices, overlap_indices ), diff )
+            # Combine the samples
+            indices <- c( setdiff( pool, indices ), overlap_indices, addit_overlap )
+            }
           }
-          
-          else {
-            
-            # number of indeces to sample
-            n_indeces = n * prop_na[i]
-            
-            # Update pool
-            pool = setdiff(pool, ind_mult)  # pool != ind_mult: longer object length is not a multiple of shorter
-            
-            # Use half of the sampled indeces from previous sample to introduce overlap
-            
-            # Condition 1 : Half of the indices to sample is smaller or equal in number to the indices from the previous round
-            if (n_indeces / 2 <= length(ind_mult) ) { ind_overlap = sample(ind_mult, n_indeces / 2) }
-            
-            # Condition 2 : Half of the indices to sample is larger in number than the indices from the previous round
-            if (n_indeces / 2 > length(ind_mult) ) { ind_overlap = sample(ind_mult, n_indeces / 2, replace = T) }
-            
-            # Combine overlapping indeces with newly sampled indeces. Two conditions can apply:
-            
-            # Condition 1: The remaining pool is larger than the number of indeces to sample
-            if ( n_indeces / 2 <= length(pool) ) {  
-              
-              # Index 50% from overlap and 50% from remaining indeces
-              ind_mult = c(ind_overlap , sample(pool, n_indeces / 2) ) }
-            
-            # Condition 2: The remaining pool is smaller than the number of indeces to sample
-            if ( n_indeces / 2 > length(pool) ) {
-              
-              # Update pool to include all possible values that were not selected by the 50% overlap object 'ind_overlap'
-              pool = (1:n)[-ind_overlap]
-              
-              # Index from combinded pool with overlap >= 50%
-              ind_mult = c(ind_overlap , sample(pool, n_indeces / 2) ) }
-            
-            # Update pool
-            pool = 1:n
-            
+                    
+        if ( prop_na[i] < prop_na[i - 1] ) {
+        
+          # number of needed indeces to sample
+          n_indeces <- n * prop_na[i]
+          # sample overlap indices as half of the indices used in preceding view 
+          overlap_indices <- sample(indices, n_indeces * min.overlap )
+          # substract the number of overlap indices
+          n_indeces <- n_indeces - length( overlap_indices )
+          # Sample from the remaining pool
+          remaining_indices <- sample( pool[-indices], n_indeces ) 
+          # Combine samples indices
+          indices <- c( overlap_indices, remaining_indices ) 
           }
-          
-          #update list of indeces
-          list_indeces[[i]] = ind_mult
-          
         }
-      }
-      
-      if (overlap == FALSE)  {
         
-        # Create list object to collect indeces for each view
-        list_indeces = list()
-        
-        # define pool of numbers to sample from
-        pool = 1:n
-        
-        # Sample indeces (without replacement)
-        ind = sample(pool , length(pool) * prop_na[1])
-        
-        for (i in 1:length(views)) {
-          
-          if (i == 1) {
-            
-            # Indeces for first view is equal to indeces sampled beforehand
-            ind_mult = ind
-          }
-          
-          else {
-            # Update pool
-            pool = pool[-ind_mult]
-            
-            # Sample from updated pool. Indices will not overlap
-            ind_mult = sample(pool , length(pool) * prop_na[i])
-          }
-          
-          # Update list
-          list_indeces[[i]] = ind_mult
-          
-        }
-      }
+      # Update list of indices
+      list_indeces[[i]] <- indices
+     }
+     # Assign missing values to data based on generated indices
     
-    
-    for (j in 1:length(views) ){
+     for ( j in 1 : length( views ) ) {
       
       # Assign missing values to selected observations for each view
-      data[list_indeces[[j]] , view.pred[[j]]] <- NA
-      
+      data[list_indeces[[j]] , view.pred[[j]] ] <- NA
     }
+   }
+  
+  
+# Multiple views without overlap
     
-   }   
-    return(data)
+  
+if ( length( views ) > 1 & overlap == FALSE ) {
+      
+  # Create list object to collect indeces for each view
+  list_indeces <- list( )
+  # define pool of numbers to sample from
+  pool <- 1 : n
+  # Sample indeces (without replacement)
+  indices <- sample( pool , length( pool ) * prop_na[1] )
+  
+  for ( i in 1 : length( views ) ) {
+
+    if ( i > 1 ) {
+      
+      # Update pool
+      pool <- pool[-indices]
+      # Sample from updated pool. indices will not overlap
+      indices <- sample( pool , length( pool ) * prop_na[i] )
+     }
+    
+    # Update list
+    list_indeces[[i]] <- indices
+   }
+  # Assign missing values to data based on generated indices
+  
+  for ( j in 1 : length( views ) ) {
+    
+    # Assign missing values to selected observations for each view
+    data[list_indeces[[j]] , view.pred[[j]] ] <- NA
   }
+ }
+  
+# Return data with generated missing values
+return( data )
+}
