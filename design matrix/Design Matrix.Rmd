@@ -1,0 +1,118 @@
+---
+title: ''
+output: html_document
+---
+
+### Design Matrix
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(kableExtra)
+```
+
+```{r, echo = T}
+
+# list object to collect combinations for each number of views
+design.matrix = list()
+
+# 1 view
+
+## VIEWS: 4 possible combinations
+view.grid =
+  expand.grid(c(1,2,3,4))
+
+## MISS.PROP: 2 possible combinations
+miss.prop.grid = 
+  expand.grid(c(0.3,0.7))
+
+## Assign to design matrix list
+
+design.matrix[[1]] <- expand.grid ( as.matrix(view.grid), 
+                                    as.matrix(miss.prop.grid) ) 
+
+# 2 views
+
+## VIEWS: 6 possible combinations
+view.grid =
+  expand.grid(c(1,2,3,4), c(1,2,3,4))  
+
+# Only retain sequences of increasing numbers
+view.grid =
+  view.grid[which(view.grid[,1] < view.grid[,2]),]
+
+## MISS.PROP: 4 possible combinations
+miss.prop.grid = 
+  expand.grid(c(0.3,0.7),c(0.3,0.7))
+
+## Assign to design matrix list
+
+design.matrix[[2]] <- expand.grid ( paste(view.grid[,1], 
+                                          view.grid[,2], sep = ","), 
+                                    paste(miss.prop.grid[,1], 
+                                          miss.prop.grid[,2], sep = ",")
+                                    )
+# 3 views
+
+## VIEWS: 4 possible combinations
+view.grid = 
+  expand.grid( c(1,2,3,4),c(1,2,3,4), c(1,2,3,4) )
+
+# Only retain sequences of increasing numbers
+view.grid = 
+  view.grid[ which( view.grid [,1] < view.grid [,2] & 
+                    view.grid [,2] < view.grid [,3]), ]
+
+## MISS.PROP: 8 possible combinations
+miss.prop.grid = 
+  expand.grid(c(0.3,0.7),c(0.3,0.7), c(0.3,0.7))
+
+## Assign to design matrix list
+
+design.matrix[[3]] <- expand.grid ( paste(view.grid[,1], 
+                                          view.grid[,2],
+                                          view.grid[,3], 
+                                          sep = ","), 
+                                    paste(miss.prop.grid[,1], 
+                                          miss.prop.grid[,2], 
+                                          miss.prop.grid[,3], 
+                                          sep = ",")
+                                    )
+# 4 views
+
+## VIEWS: 1 possible combination
+view.grid = paste("1,2,3,4")
+
+## MISS.PROP: 16 possible combinations
+miss.prop.grid = 
+  expand.grid( c(0.3,0.7), c(0.3,0.7), c(0.3,0.7), c(0.3,0.7) )
+
+## Assign to design matrix list
+
+design.matrix[[4]] <- expand.grid ( view.grid, 
+                                    paste(miss.prop.grid[,1], 
+                                          miss.prop.grid[,2], 
+                                          miss.prop.grid[,3], 
+                                          sep = ",")
+                                  )
+
+# Bind collected results in design matrix
+design.matrix = do.call(rbind, design.matrix)
+
+# Print design matrix
+# design.matrix
+
+# Save design matrix
+#save(design.matrix, file ="")
+```
+
+```{r, echo = F}
+
+names(design.matrix) = c("View(s)", "Miss.Proportions")
+
+design.matrix %>%  
+  kbl(caption = "", digits = 2, row.names = T) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+```
+
