@@ -63,7 +63,8 @@ design.matrix[[3]] <- expand.grid ( paste(view.grid[,1],
                                           sep = ","), 
                                     paste(miss.prop.grid[,1], 
                                           miss.prop.grid[,2], 
-                                          miss.prop.grid[,3], 
+                                          miss.prop.grid[,3],
+                                          miss.prop.grid[,4],
                                           sep = ",")
 )
 # 4 views
