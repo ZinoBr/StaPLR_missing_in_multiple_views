@@ -1,0 +1,2499 @@
+---
+title: "New_CCA_tables"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(kableExtra)
+
+# Load design matrix
+miss.conditions = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Design Matrix Revision/miss.conditions.rds")
+
+# Mean imputation on the meta level
+
+measures = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+
+
+# Assign indeces by number of views with missing data
+
+one_view = c(1:800)
+two_views = c(801:3200)
+three_views = c(3201:6400)
+four_views = c(6401:8000)
+
+# Assigning indices for noise variables for each level of views with missingness 
+
+# One view
+
+    one.view.ind = as.list(c(1:8)[grepl(4, miss.conditions[1:8,1])])
+    
+    for (i in 1:2){
+      j = one.view.ind[[i]] * 100 
+      one.view.ind[[i]] = (j - 99) : j  
+    }
+    
+    one.view.ind = unlist(one.view.ind)
+
+# Two views
+    
+    two.views.ind = as.list(c(9:32)[grepl(4, miss.conditions[9:32,1])])
+    
+    for (i in 1:12){
+      j = two.views.ind[[i]] * 100 
+      two.views.ind[[i]] = (j - 99) : j  
+      }
+    
+    two.views.ind = unlist(two.views.ind)
+
+# Three views
+        
+    three.views.ind = as.list(c(33:64)[grepl(4, miss.conditions[33:64,1])])
+    
+    for (i in 1:24 ){
+      j = three.views.ind[[i]] * 100 
+      three.views.ind[[i]] = (j - 99) : j 
+    }
+    
+    three.views.ind = unlist(three.views.ind)
+
+# Four views
+        
+    four.views.ind = as.list(c(65:80)[grepl(4, miss.conditions[65:80,1])])
+    
+    for (i in 1:16 ){
+      j = four.views.ind[[i]] * 100 
+      four.views.ind[[i]] = (j - 99) : j 
+    }
+    
+    four.views.ind = unlist(four.views.ind)
+```
+
+```{r indeces conditions by #views }
+one_view_c = c(1:8)
+two_views_c = c(9:32)
+three_views_c = c(33:64)
+four_views_c = c(65:80)
+```
+
+
+
+### Number of complete cases : General
+
+```{r}
+n_completecases_mat = matrix(measures$n_completecase, ncol = 80)
+
+CC.table = data.frame(mean = apply(n_completecases_mat, 2, mean), 
+                                 sd = apply(n_completecases_mat, 2, sd))
+
+boxplot(n_completecases_mat, 
+        # ylim = c(0.6,0.9),
+            xlab = "Design matrix row",
+            at =c(c(1:8), c(11:34) , c(37:68), c(71:86)) )
+
+```
+
+
+```{r, echo = F}
+
+mat_CC = matrix(measures$n_completecases, ncol = 80)
+
+df = data.frame(`One view` = c( mean ( mat_CC[one_view] ), sd( mat_CC[one_view] ) ),
+
+                `Two views` = c( mean ( mat_CC[two_views] ), sd( mat_CC[two_views] ) ),
+              
+                `Three views` = c( mean ( mat_CC[three_views] ), sd( mat_CC[three_views] ) ),
+                
+                `Four views` = c( mean ( mat_CC[four_views] ), sd( mat_CC[four_views] ) ) )
+
+rownames(df) = c("Mean", "SD")
+colnames(df) = c("One view", "Two views", "Three views","Four views")
+        
+df %>%   
+  kbl(caption = "N Complete Cases", digits = 2, row.names = T) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+CC.table %>%   
+  kbl(caption = "N Complete Cases", digits = 2, row.names = T) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r, echo = F}
+# boxplots
+boxplot(    measures$n_completecases[one_view] , 
+         
+            measures$n_completecases[two_views] ,
+         
+            measures$n_completecases[three_views] ,
+            
+            measures$n_completecases[four_views] ,
+            #las = 2, 
+            names = c("One view", "Two views", "Three views",
+                      "Four views") ,
+            ylim = c(0,1000),
+            #at =c(1,2,3, 5,6,7 ,9,10,11, 13),
+            boxwex=.5)
+
+```
+
+### Test Accuracy 
+
+#### Preparation
+
+```{r, echo = F}
+
+# Create a matrix with rows = 100, and clmns = 80
+
+mat_TA = matrix(measures$TestAccuracy, ncol = 80)
+
+#test.accuracy.table = data.frame(mean = apply(mat_TA, 2, mean, na.rm = TRUE), sd = apply(mat_TA, 2, sd, na.rm = TRUE))
+
+# Change NaN to NA
+# test.accuracy.table[which(test.accuracy.table[,1] == "NaN"), 1] <- NA
+
+# Transpose matrix with TA values
+mat_TA_t = t(mat_TA)
+
+# Add columns with condition index and bind in dataframe "df_TA"
+df_TA = data.frame(conditions = 1:80, mat_TA_t)
+
+# Exclude rows with only NAs
+excl_only_NAs = function( x ){ ifelse( names( table( is.na( x ) )[1] ) == "TRUE", FALSE, TRUE )}
+                           
+# Assign indices with conditions to retain
+retain_cond = apply(df_TA[,-1], 1, excl_only_NAs)
+
+# Subset retained conditions
+df_TA = df_TA[ retain_cond, ]   
+
+```
+
+
+#### Table 1: Number of views with missingness
+
+```{r, echo = F}
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TA[,-1][one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TA[,-1][which( df_TA$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TA[,-1][which( df_TA$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_TA[,-1][which( df_TA$conditions %in% four_views_c),], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(one_view_c),
+                  
+                  # n views = 2
+                  sum(df_TA$conditions %in% two_views_c),
+                  
+                  # n views = 3
+                  sum(df_TA$conditions %in% three_views_c),
+                  
+                  # n views = 4
+                  sum(df_TA$conditions %in% four_views_c)),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[which( df_TA$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[which( df_TA$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[which( df_TA$conditions %in% four_views_c),], 1, mean), na.rm = T))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Test Accuracy", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r}
+# Note: Table shows mean values across conditions for each level of views with missing data
+```
+
+#### Table 2 : Missingness proportions
+
+```{r}
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:4,
+              9:14,
+              33:36,
+              65)
+  
+prop_0.7 = c( 5:8,
+              27:32,
+              61:64,
+              80)
+```
+
+#### 30% missingness
+
+```{r}
+# Indeces: 30% missingness
+
+TA_v1_30 = which( df_TA$conditions %in% one_view_c[which(one_view_c %in% prop_0.3)] )
+
+TA_v2_30 = which( df_TA$conditions %in% two_views_c[which(two_views_c %in% prop_0.3)] )
+
+TA_v3_30 = which( df_TA$conditions %in% three_views_c[which(three_views_c %in% prop_0.3)] )
+
+TA_v4_30 = which( df_TA$conditions %in% four_views_c[which(four_views_c %in% prop_0.3)] )
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TA[,-1][TA_v1_30,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TA[,-1][TA_v2_30,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TA[,-1][TA_v3_30,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_TA[,-1][TA_v4_30,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_30),
+                  
+                  # n views = 2
+                  length(TA_v2_30),
+                  
+                  # n views = 3
+                  length(TA_v3_30),
+                  
+                  # n views = 4
+                  length(TA_v4_30) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TA$conditions[TA_v1_30],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TA$conditions[TA_v2_30],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TA$conditions[TA_v3_30],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_TA$conditions[TA_v1_30],])) / 10) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Test Accuracy", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### 70% missingness
+
+```{r}
+# Indeces: 70% missingness
+
+TA_v1_70 = which( df_TA$conditions %in% one_view_c[which(one_view_c %in% prop_0.7)] )
+
+TA_v2_70 = which( df_TA$conditions %in% two_views_c[which(two_views_c %in% prop_0.7)] )
+
+TA_v3_70 = which( df_TA$conditions %in% three_views_c[which(three_views_c %in% prop_0.7)] )
+
+TA_v4_70 = which( df_TA$conditions %in% four_views_c[which(four_views_c %in% prop_0.7)] )
+
+# There is no results for four views with 70% missingness
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TA[,-1][TA_v1_70,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TA[,-1][TA_v2_70,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TA[,-1][TA_v3_70,], 1, mean), na.rm = T),
+                  # n views = 4
+                  0), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_70),
+                  
+                  # n views = 2
+                  length(TA_v2_70),
+                  
+                  # n views = 3
+                  length(TA_v3_70),
+                  
+                  # n views = 4
+                  length(TA_v4_70) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TA$conditions[TA_v1_70],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TA$conditions[TA_v2_70],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TA$conditions[TA_v3_70],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_TA$conditions[TA_v4_70],], na.rm = T)
+                  
+                  )) / 10 )
+                
+                )
+
+
+df[df == "NaN"] <- 0
+
+# Table
+df %>%   
+  kbl(caption = "Test Accuracy", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### Table 3 & 4 : view type and view size
+
+#### Table 3 : n views = 1
+
+```{r}
+
+# Table 3: n views = 1
+
+# Indeces
+
+# view 1
+v1_1 = c(1,5)
+
+# view 2
+v1_2 = c(2,6)
+
+# view 3
+v1_3 = c(3,7)
+
+# view 4
+v1_4 = c(4,8)
+
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TA[,-1][v1_1,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TA[,-1][v1_2,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TA[,-1][v1_3,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_TA[,-1][v1_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(v1_1),
+                  
+                  # n views = 2
+                  length(v1_2),
+                  
+                  # n views = 3
+                  length(v1_3),
+                  
+                  # n views = 4
+                  length(v1_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TA$conditions[v1_1],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TA$conditions[v1_2],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TA$conditions[v1_3],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_TA$conditions[v1_4],]))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Test Accuracy", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+
+```
+
+#### Table 4 : n views = 2
+
+
+```{r}
+
+# Indeces
+
+# views 1,2
+v2_1_2 = c(9,15,21, 27)
+
+# views 1,3
+v2_1_3 = c(10,16,22, 28)
+
+# views 2,3
+v2_2_3 = c(12, 18, 24, 30)
+
+# views 1,4
+v2_1_4 = c(11, 17, 23, 29)
+
+# views 2,4
+v2_2_4 = c(13, 19, 25, 31)
+
+# views 3,4
+v2_3_4 = c(14, 20, 26, 32)
+
+
+# Dataframe 
+df = data.frame(Views = c("1,2","1,3", "2,3", "1,4", "2,4", "3,4"),
+                Means = round( c( 
+                  # views 1,2
+                  mean(apply(df_TA[,-1][v2_1_2,], 1, mean), na.rm = T),
+                  # views 1,3
+                  mean(apply(df_TA[,-1][v2_1_3,], 1, mean), na.rm = T),
+                  # views 1,4
+                  mean(apply(df_TA[,-1][v2_2_3,], 1, mean), na.rm = T),
+                  # views 2,3
+                  mean(apply(df_TA[,-1][v2_1_4,], 1, mean), na.rm = T),
+                  # views 2,4
+                  mean(apply(df_TA[,-1][v2_2_4], 1, mean), na.rm = T),
+                  # views 3,4
+                  mean(apply(df_TA[,-1][v2_3_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+
+                  length(v2_1_2),
+
+                  length(v2_1_3),
+                  
+                  length(v2_2_3),
+                  
+                  length(v2_1_4),
+                  
+                  length(v2_2_4),
+                  
+                  length(v2_3_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TA$conditions[v2_1_2],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TA$conditions[v2_1_3],], 1, mean), na.rm = T),
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TA$conditions[v2_2_3],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TA$conditions[v2_1_4],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TA$conditions[v2_2_4],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[df_TA$conditions[v2_3_4],], 1, mean))) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Test Accuracy", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+```
+
+
+### MSEP
+
+#### Preparation
+
+```{r, echo = F}
+
+# Create a matrix with rows = 100, and clmns = 80
+
+mat_MSEP = matrix(measures$MSEP, ncol = 80)
+
+#test.accuracy.table = data.frame(mean = apply(mat_MSEP, 2, mean, na.rm = TRUE), sd = apply(mat_MSEP, 2, sd, na.rm = TRUE))
+
+# Change NaN to NA
+# test.accuracy.table[which(test.accuracy.table[,1] == "NaN"), 1] <- NA
+
+# Transpose matrix with TA values
+mat_MSEP_t = t(mat_MSEP)
+
+# Add columns with condition index and bind in dataframe "df_MSEP"
+df_MSEP = data.frame(conditions = 1:80, mat_MSEP_t)
+
+# Exclude rows with only NAs
+excl_only_NAs = function( x ){ ifelse( names( table( is.na( x ) )[1] ) == "TRUE", FALSE, TRUE )}
+                           
+# Assign indices with conditions to retain
+retain_cond = apply(df_MSEP[,-1], 1, excl_only_NAs)
+
+# Subset retained conditions
+df_MSEP = df_MSEP[ retain_cond, ]   
+
+```
+
+
+#### Table 1: Number of views with missingness
+
+```{r, echo = F}
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MSEP[,-1][one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MSEP[,-1][which( df_MSEP$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MSEP[,-1][which( df_MSEP$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_MSEP[,-1][which( df_MSEP$conditions %in% four_views_c),], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(one_view_c),
+                  
+                  # n views = 2
+                  sum(df_MSEP$conditions %in% two_views_c),
+                  
+                  # n views = 3
+                  sum(df_MSEP$conditions %in% three_views_c),
+                  
+                  # n views = 4
+                  sum(df_MSEP$conditions %in% four_views_c)),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[which( df_MSEP$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[which( df_MSEP$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[which( df_MSEP$conditions %in% four_views_c),], 1, mean), na.rm = T))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "MSEP", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r}
+# Note: Table shows mean values across conditions for each level of views with missing data
+```
+
+#### Table 2 : Missingness proportions
+
+```{r}
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:4,
+              9:14,
+              33:36,
+              65)
+  
+prop_0.7 = c( 5:8,
+              27:32,
+              61:64,
+              80)
+```
+
+#### 30% missingness
+
+```{r}
+# Indeces: 30% missingness
+
+TA_v1_30 = which( df_MSEP$conditions %in% one_view_c[which(one_view_c %in% prop_0.3)] )
+
+TA_v2_30 = which( df_MSEP$conditions %in% two_views_c[which(two_views_c %in% prop_0.3)] )
+
+TA_v3_30 = which( df_MSEP$conditions %in% three_views_c[which(three_views_c %in% prop_0.3)] )
+
+TA_v4_30 = which( df_MSEP$conditions %in% four_views_c[which(four_views_c %in% prop_0.3)] )
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MSEP[,-1][TA_v1_30,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MSEP[,-1][TA_v2_30,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MSEP[,-1][TA_v3_30,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_MSEP[,-1][TA_v4_30,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_30),
+                  
+                  # n views = 2
+                  length(TA_v2_30),
+                  
+                  # n views = 3
+                  length(TA_v3_30),
+                  
+                  # n views = 4
+                  length(TA_v4_30) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[TA_v1_30],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[TA_v2_30],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[TA_v3_30],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_MSEP$conditions[TA_v1_30],])) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "MSEP", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### 70% missingness
+
+```{r}
+# Indeces: 70% missingness
+
+TA_v1_70 = which( df_MSEP$conditions %in% one_view_c[which(one_view_c %in% prop_0.7)] )
+
+TA_v2_70 = which( df_MSEP$conditions %in% two_views_c[which(two_views_c %in% prop_0.7)] )
+
+TA_v3_70 = which( df_MSEP$conditions %in% three_views_c[which(three_views_c %in% prop_0.7)] )
+
+TA_v4_70 = which( df_MSEP$conditions %in% four_views_c[which(four_views_c %in% prop_0.7)] )
+
+# There is no results for four views with 70% missingness
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MSEP[,-1][TA_v1_70,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MSEP[,-1][TA_v2_70,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MSEP[,-1][TA_v3_70,], 1, mean), na.rm = T),
+                  # n views = 4
+                  0), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_70),
+                  
+                  # n views = 2
+                  length(TA_v2_70),
+                  
+                  # n views = 3
+                  length(TA_v3_70),
+                  
+                  # n views = 4
+                  length(TA_v4_70) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[TA_v1_70],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[TA_v2_70],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[TA_v3_70],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_MSEP$conditions[TA_v4_70],], na.rm = T)
+                  
+                  )) / 10 )
+                
+                )
+
+
+df[df == "NaN"] <- 0
+
+# Table
+df %>%   
+  kbl(caption = "MSEP", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### Table 3 & 4 : view type and view size
+
+#### Table 3 : n views = 1
+
+```{r}
+
+# Table 3: n views = 1
+
+# Indeces
+
+# view 1
+v1_1 = c(1,5)
+
+# view 2
+v1_2 = c(2,6)
+
+# view 3
+v1_3 = c(3,7)
+
+# view 4
+v1_4 = c(4,8)
+
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MSEP[,-1][v1_1,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MSEP[,-1][v1_2,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MSEP[,-1][v1_3,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_MSEP[,-1][v1_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(v1_1),
+                  
+                  # n views = 2
+                  length(v1_2),
+                  
+                  # n views = 3
+                  length(v1_3),
+                  
+                  # n views = 4
+                  length(v1_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v1_1],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v1_2],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v1_3],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_MSEP$conditions[v1_4],]))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "MSEP", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+
+```
+
+#### Table 4 : n views = 2
+
+
+```{r}
+
+# Indeces
+
+# views 1,2
+v2_1_2 = c(9,15,21, 27)
+
+# views 1,3
+v2_1_3 = c(10,16,22, 28)
+
+# views 2,3
+v2_2_3 = c(12, 18, 24, 30)
+
+# views 1,4
+v2_1_4 = c(11, 17, 23, 29)
+
+# views 2,4
+v2_2_4 = c(13, 19, 25, 31)
+
+# views 3,4
+v2_3_4 = c(14, 20, 26, 32)
+
+
+# Dataframe 
+df = data.frame(Views = c("1,2","1,3", "2,3", "1,4", "2,4", "3,4"),
+                Means = round( c( 
+                  # views 1,2
+                  mean(apply(df_MSEP[,-1][v2_1_2,], 1, mean), na.rm = T),
+                  # views 1,3
+                  mean(apply(df_MSEP[,-1][v2_1_3,], 1, mean), na.rm = T),
+                  # views 1,4
+                  mean(apply(df_MSEP[,-1][v2_2_3,], 1, mean), na.rm = T),
+                  # views 2,3
+                  mean(apply(df_MSEP[,-1][v2_1_4,], 1, mean), na.rm = T),
+                  # views 2,4
+                  mean(apply(df_MSEP[,-1][v2_2_4], 1, mean), na.rm = T),
+                  # views 3,4
+                  mean(apply(df_MSEP[,-1][v2_3_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+
+                  length(v2_1_2),
+
+                  length(v2_1_3),
+                  
+                  length(v2_2_3),
+                  
+                  length(v2_1_4),
+                  
+                  length(v2_2_4),
+                  
+                  length(v2_3_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v2_1_2],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v2_1_3],], 1, mean), na.rm = T),
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v2_2_3],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v2_1_4],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v2_2_4],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[df_MSEP$conditions[v2_3_4],], 1, mean))) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "MSEP", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+```
+
+
+---
+title: ''
+output: html_document
+---
+
+### MPsV
+
+#### Preparation
+
+```{r, echo = F}
+
+# Create a matrix with rows = 100, and clmns = 80
+
+mat_MPsV = matrix(measures$MPsV, ncol = 80)
+
+#test.accuracy.table = data.frame(mean = apply(mat_MPsV, 2, mean, na.rm = TRUE), sd = apply(mat_MPsV, 2, sd, na.rm = TRUE))
+
+# Change NaN to NA
+# test.accuracy.table[which(test.accuracy.table[,1] == "NaN"), 1] <- NA
+
+# Transpose matrix with TA values
+mat_MPsV_t = t(mat_MPsV)
+
+# Add columns with condition index and bind in dataframe "df_MPsV"
+df_MPsV = data.frame(conditions = 1:80, mat_MPsV_t)
+
+# Exclude rows with only NAs
+excl_only_NAs = function( x ){ ifelse( names( table( is.na( x ) )[1] ) == "TRUE", FALSE, TRUE )}
+                           
+# Assign indices with conditions to retain
+retain_cond = apply(df_MPsV[,-1], 1, excl_only_NAs)
+
+# Subset retained conditions
+df_MPsV = df_MPsV[ retain_cond, ]   
+
+```
+
+
+#### Table 1: Number of views with missingness
+
+```{r, echo = F}
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MPsV[,-1][one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MPsV[,-1][which( df_MPsV$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MPsV[,-1][which( df_MPsV$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_MPsV[,-1][which( df_MPsV$conditions %in% four_views_c),], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(one_view_c),
+                  
+                  # n views = 2
+                  sum(df_MPsV$conditions %in% two_views_c),
+                  
+                  # n views = 3
+                  sum(df_MPsV$conditions %in% three_views_c),
+                  
+                  # n views = 4
+                  sum(df_MPsV$conditions %in% four_views_c)),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[which( df_MPsV$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[which( df_MPsV$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[which( df_MPsV$conditions %in% four_views_c),], 1, mean), na.rm = T))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Mean proportion of correctly selected views", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r}
+# Note: Table shows mean values across conditions for each level of views with missing data
+```
+
+#### Table 2 : Missingness proportions
+
+```{r}
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:4,
+              9:14,
+              33:36,
+              65)
+  
+prop_0.7 = c( 5:8,
+              27:32,
+              61:64,
+              80)
+```
+
+#### 30% missingness
+
+```{r}
+# Indeces: 30% missingness
+
+TA_v1_30 = which( df_MPsV$conditions %in% one_view_c[which(one_view_c %in% prop_0.3)] )
+
+TA_v2_30 = which( df_MPsV$conditions %in% two_views_c[which(two_views_c %in% prop_0.3)] )
+
+TA_v3_30 = which( df_MPsV$conditions %in% three_views_c[which(three_views_c %in% prop_0.3)] )
+
+TA_v4_30 = which( df_MPsV$conditions %in% four_views_c[which(four_views_c %in% prop_0.3)] )
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MPsV[,-1][TA_v1_30,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MPsV[,-1][TA_v2_30,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MPsV[,-1][TA_v3_30,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_MPsV[,-1][TA_v4_30,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_30),
+                  
+                  # n views = 2
+                  length(TA_v2_30),
+                  
+                  # n views = 3
+                  length(TA_v3_30),
+                  
+                  # n views = 4
+                  length(TA_v4_30) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[TA_v1_30],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[TA_v2_30],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[TA_v3_30],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_MPsV$conditions[TA_v1_30],])) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Mean proportion of correctly selected views", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### 70% missingness
+
+```{r}
+# Indeces: 70% missingness
+
+TA_v1_70 = which( df_MPsV$conditions %in% one_view_c[which(one_view_c %in% prop_0.7)] )
+
+TA_v2_70 = which( df_MPsV$conditions %in% two_views_c[which(two_views_c %in% prop_0.7)] )
+
+TA_v3_70 = which( df_MPsV$conditions %in% three_views_c[which(three_views_c %in% prop_0.7)] )
+
+TA_v4_70 = which( df_MPsV$conditions %in% four_views_c[which(four_views_c %in% prop_0.7)] )
+
+# There is no results for four views with 70% missingness
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MPsV[,-1][TA_v1_70,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MPsV[,-1][TA_v2_70,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MPsV[,-1][TA_v3_70,], 1, mean), na.rm = T),
+                  # n views = 4
+                  0), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_70),
+                  
+                  # n views = 2
+                  length(TA_v2_70),
+                  
+                  # n views = 3
+                  length(TA_v3_70),
+                  
+                  # n views = 4
+                  length(TA_v4_70) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[TA_v1_70],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[TA_v2_70],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[TA_v3_70],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_MPsV$conditions[TA_v4_70],], na.rm = T)
+                  
+                  )) / 10 )
+                
+                )
+
+
+df[df == "NaN"] <- 0
+
+# Table
+df %>%   
+  kbl(caption = "Mean proportion of correctly selected views", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### Table 3 & 4 : view type and view size
+
+#### Table 3 : n views = 1
+
+```{r}
+
+# Table 3: n views = 1
+
+# Indeces
+
+# view 1
+v1_1 = c(1,5)
+
+# view 2
+v1_2 = c(2,6)
+
+# view 3
+v1_3 = c(3,7)
+
+# view 4
+v1_4 = c(4,8)
+
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_MPsV[,-1][v1_1,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_MPsV[,-1][v1_2,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_MPsV[,-1][v1_3,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_MPsV[,-1][v1_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(v1_1),
+                  
+                  # n views = 2
+                  length(v1_2),
+                  
+                  # n views = 3
+                  length(v1_3),
+                  
+                  # n views = 4
+                  length(v1_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v1_1],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v1_2],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v1_3],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_MPsV$conditions[v1_4],]))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Mean proportion of correctly selected views", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+
+```
+
+#### Table 4 : n views = 2
+
+
+```{r}
+
+# Indeces
+
+# views 1,2
+v2_1_2 = c(9,15,21, 27)
+
+# views 1,3
+v2_1_3 = c(10,16,22, 28)
+
+# views 2,3
+v2_2_3 = c(12, 18, 24, 30)
+
+# views 1,4
+v2_1_4 = c(11, 17, 23, 29)
+
+# views 2,4
+v2_2_4 = c(13, 19, 25, 31)
+
+# views 3,4
+v2_3_4 = c(14, 20, 26, 32)
+
+
+# Dataframe 
+df = data.frame(Views = c("1,2","1,3", "2,3", "1,4", "2,4", "3,4"),
+                Means = round( c( 
+                  # views 1,2
+                  mean(apply(df_MPsV[,-1][v2_1_2,], 1, mean), na.rm = T),
+                  # views 1,3
+                  mean(apply(df_MPsV[,-1][v2_1_3,], 1, mean), na.rm = T),
+                  # views 1,4
+                  mean(apply(df_MPsV[,-1][v2_2_3,], 1, mean), na.rm = T),
+                  # views 2,3
+                  mean(apply(df_MPsV[,-1][v2_1_4,], 1, mean), na.rm = T),
+                  # views 2,4
+                  mean(apply(df_MPsV[,-1][v2_2_4], 1, mean), na.rm = T),
+                  # views 3,4
+                  mean(apply(df_MPsV[,-1][v2_3_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+
+                  length(v2_1_2),
+
+                  length(v2_1_3),
+                  
+                  length(v2_2_3),
+                  
+                  length(v2_1_4),
+                  
+                  length(v2_2_4),
+                  
+                  length(v2_3_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v2_1_2],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v2_1_3],], 1, mean), na.rm = T),
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v2_2_3],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v2_1_4],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v2_2_4],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[df_MPsV$conditions[v2_3_4],], 1, mean))) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "Mean proportion of correctly selected views", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+```
+
+---
+title: ''
+output: html_document
+---
+
+### TPR
+
+#### Preparation
+
+```{r, echo = F}
+
+# Create a matrix with rows = 100, and clmns = 80
+
+mat_TPR = matrix(measures$TPR, ncol = 80)
+
+#test.accuracy.table = data.frame(mean = apply(mat_TPR, 2, mean, na.rm = TRUE), sd = apply(mat_TPR, 2, sd, na.rm = TRUE))
+
+# Change NaN to NA
+# test.accuracy.table[which(test.accuracy.table[,1] == "NaN"), 1] <- NA
+
+# Transpose matrix with TA values
+mat_TPR_t = t(mat_TPR)
+
+# Add columns with condition index and bind in dataframe "df_TPR"
+df_TPR = data.frame(conditions = 1:80, mat_TPR_t)
+
+# Exclude rows with only NAs
+excl_only_NAs = function( x ){ ifelse( names( table( is.na( x ) )[1] ) == "TRUE", FALSE, TRUE )}
+                           
+# Assign indices with conditions to retain
+retain_cond = apply(df_TPR[,-1], 1, excl_only_NAs)
+
+# Subset retained conditions
+df_TPR = df_TPR[ retain_cond, ]   
+
+```
+
+
+#### Table 1: Number of views with missingness
+
+```{r, echo = F}
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TPR[,-1][one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TPR[,-1][which( df_TPR$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TPR[,-1][which( df_TPR$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_TPR[,-1][which( df_TPR$conditions %in% four_views_c),], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(one_view_c),
+                  
+                  # n views = 2
+                  sum(df_TPR$conditions %in% two_views_c),
+                  
+                  # n views = 3
+                  sum(df_TPR$conditions %in% three_views_c),
+                  
+                  # n views = 4
+                  sum(df_TPR$conditions %in% four_views_c)),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[which( df_TPR$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[which( df_TPR$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[which( df_TPR$conditions %in% four_views_c),], 1, mean), na.rm = T))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "True positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r}
+# Note: Table shows mean values across conditions for each level of views with missing data
+```
+
+#### Table 2 : Missingness proportions
+
+```{r}
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:4,
+              9:14,
+              33:36,
+              65)
+  
+prop_0.7 = c( 5:8,
+              27:32,
+              61:64,
+              80)
+```
+
+#### 30% missingness
+
+```{r}
+# Indeces: 30% missingness
+
+TA_v1_30 = which( df_TPR$conditions %in% one_view_c[which(one_view_c %in% prop_0.3)] )
+
+TA_v2_30 = which( df_TPR$conditions %in% two_views_c[which(two_views_c %in% prop_0.3)] )
+
+TA_v3_30 = which( df_TPR$conditions %in% three_views_c[which(three_views_c %in% prop_0.3)] )
+
+TA_v4_30 = which( df_TPR$conditions %in% four_views_c[which(four_views_c %in% prop_0.3)] )
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TPR[,-1][TA_v1_30,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TPR[,-1][TA_v2_30,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TPR[,-1][TA_v3_30,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_TPR[,-1][TA_v4_30,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_30),
+                  
+                  # n views = 2
+                  length(TA_v2_30),
+                  
+                  # n views = 3
+                  length(TA_v3_30),
+                  
+                  # n views = 4
+                  length(TA_v4_30) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TPR$conditions[TA_v1_30],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TPR$conditions[TA_v2_30],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TPR$conditions[TA_v3_30],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_TPR$conditions[TA_v1_30],])) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "True positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### 70% missingness
+
+```{r}
+# Indeces: 70% missingness
+
+TA_v1_70 = which( df_TPR$conditions %in% one_view_c[which(one_view_c %in% prop_0.7)] )
+
+TA_v2_70 = which( df_TPR$conditions %in% two_views_c[which(two_views_c %in% prop_0.7)] )
+
+TA_v3_70 = which( df_TPR$conditions %in% three_views_c[which(three_views_c %in% prop_0.7)] )
+
+TA_v4_70 = which( df_TPR$conditions %in% four_views_c[which(four_views_c %in% prop_0.7)] )
+
+# There is no results for four views with 70% missingness
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TPR[,-1][TA_v1_70,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TPR[,-1][TA_v2_70,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TPR[,-1][TA_v3_70,], 1, mean), na.rm = T),
+                  # n views = 4
+                  0), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_70),
+                  
+                  # n views = 2
+                  length(TA_v2_70),
+                  
+                  # n views = 3
+                  length(TA_v3_70),
+                  
+                  # n views = 4
+                  length(TA_v4_70) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TPR$conditions[TA_v1_70],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TPR$conditions[TA_v2_70],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TPR$conditions[TA_v3_70],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_TPR$conditions[TA_v4_70],], na.rm = T)
+                  
+                  )) / 10 )
+                
+                )
+
+
+df[df == "NaN"] <- 0
+
+# Table
+df %>%   
+  kbl(caption = "True positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### Table 3 & 4 : view type and view size
+
+#### Table 3 : n views = 1
+
+```{r}
+
+# Table 3: n views = 1
+
+# Indeces
+
+# view 1
+v1_1 = c(1,5)
+
+# view 2
+v1_2 = c(2,6)
+
+# view 3
+v1_3 = c(3,7)
+
+# view 4
+v1_4 = c(4,8)
+
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_TPR[,-1][v1_1,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_TPR[,-1][v1_2,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_TPR[,-1][v1_3,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_TPR[,-1][v1_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(v1_1),
+                  
+                  # n views = 2
+                  length(v1_2),
+                  
+                  # n views = 3
+                  length(v1_3),
+                  
+                  # n views = 4
+                  length(v1_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v1_1],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v1_2],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v1_3],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_TPR$conditions[v1_4],]))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "True positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+
+```
+
+#### Table 4 : n views = 2
+
+
+```{r}
+
+# Indeces
+
+# views 1,2
+v2_1_2 = c(9,15,21, 27)
+
+# views 1,3
+v2_1_3 = c(10,16,22, 28)
+
+# views 2,3
+v2_2_3 = c(12, 18, 24, 30)
+
+# views 1,4
+v2_1_4 = c(11, 17, 23, 29)
+
+# views 2,4
+v2_2_4 = c(13, 19, 25, 31)
+
+# views 3,4
+v2_3_4 = c(14, 20, 26, 32)
+
+
+# Dataframe 
+df = data.frame(Views = c("1,2","1,3", "2,3", "1,4", "2,4", "3,4"),
+                Means = round( c( 
+                  # views 1,2
+                  mean(apply(df_TPR[,-1][v2_1_2,], 1, mean), na.rm = T),
+                  # views 1,3
+                  mean(apply(df_TPR[,-1][v2_1_3,], 1, mean), na.rm = T),
+                  # views 1,4
+                  mean(apply(df_TPR[,-1][v2_2_3,], 1, mean), na.rm = T),
+                  # views 2,3
+                  mean(apply(df_TPR[,-1][v2_1_4,], 1, mean), na.rm = T),
+                  # views 2,4
+                  mean(apply(df_TPR[,-1][v2_2_4], 1, mean), na.rm = T),
+                  # views 3,4
+                  mean(apply(df_TPR[,-1][v2_3_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+
+                  length(v2_1_2),
+
+                  length(v2_1_3),
+                  
+                  length(v2_2_3),
+                  
+                  length(v2_1_4),
+                  
+                  length(v2_2_4),
+                  
+                  length(v2_3_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v2_1_2],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v2_1_3],], 1, mean), na.rm = T),
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v2_2_3],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v2_1_4],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v2_2_4],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[df_TPR$conditions[v2_3_4],], 1, mean))) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "True positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+```
+
+---
+title: ''
+output: html_document
+---
+
+### FPR
+
+#### Preparation
+
+```{r, echo = F}
+
+# Create a matrix with rows = 100, and clmns = 80
+
+mat_FPR = matrix(measures$FPR, ncol = 80)
+
+#test.accuracy.table = data.frame(mean = apply(mat_FPR, 2, mean, na.rm = TRUE), sd = apply(mat_FPR, 2, sd, na.rm = TRUE))
+
+# Change NaN to NA
+# test.accuracy.table[which(test.accuracy.table[,1] == "NaN"), 1] <- NA
+
+# Transpose matrix with TA values
+mat_FPR_t = t(mat_FPR)
+
+# Add columns with condition index and bind in dataframe "df_FPR"
+df_FPR = data.frame(conditions = 1:80, mat_FPR_t)
+
+# Exclude rows with only NAs
+excl_only_NAs = function( x ){ ifelse( names( table( is.na( x ) )[1] ) == "TRUE", FALSE, TRUE )}
+                           
+# Assign indices with conditions to retain
+retain_cond = apply(df_FPR[,-1], 1, excl_only_NAs)
+
+# Subset retained conditions
+df_FPR = df_FPR[ retain_cond, ]   
+
+```
+
+
+#### Table 1: Number of views with missingness
+
+```{r, echo = F}
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FPR[,-1][one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FPR[,-1][which( df_FPR$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FPR[,-1][which( df_FPR$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_FPR[,-1][which( df_FPR$conditions %in% four_views_c),], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(one_view_c),
+                  
+                  # n views = 2
+                  sum(df_FPR$conditions %in% two_views_c),
+                  
+                  # n views = 3
+                  sum(df_FPR$conditions %in% three_views_c),
+                  
+                  # n views = 4
+                  sum(df_FPR$conditions %in% four_views_c)),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[which( df_FPR$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[which( df_FPR$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[which( df_FPR$conditions %in% four_views_c),], 1, mean), na.rm = T))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r}
+# Note: Table shows mean values across conditions for each level of views with missing data
+```
+
+#### Table 2 : Missingness proportions
+
+```{r}
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:4,
+              9:14,
+              33:36,
+              65)
+  
+prop_0.7 = c( 5:8,
+              27:32,
+              61:64,
+              80)
+```
+
+#### 30% missingness
+
+```{r}
+# Indeces: 30% missingness
+
+TA_v1_30 = which( df_FPR$conditions %in% one_view_c[which(one_view_c %in% prop_0.3)] )
+
+TA_v2_30 = which( df_FPR$conditions %in% two_views_c[which(two_views_c %in% prop_0.3)] )
+
+TA_v3_30 = which( df_FPR$conditions %in% three_views_c[which(three_views_c %in% prop_0.3)] )
+
+TA_v4_30 = which( df_FPR$conditions %in% four_views_c[which(four_views_c %in% prop_0.3)] )
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FPR[,-1][TA_v1_30,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FPR[,-1][TA_v2_30,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FPR[,-1][TA_v3_30,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_FPR[,-1][TA_v4_30,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_30),
+                  
+                  # n views = 2
+                  length(TA_v2_30),
+                  
+                  # n views = 3
+                  length(TA_v3_30),
+                  
+                  # n views = 4
+                  length(TA_v4_30) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FPR$conditions[TA_v1_30],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FPR$conditions[TA_v2_30],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FPR$conditions[TA_v3_30],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_FPR$conditions[TA_v1_30],])) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### 70% missingness
+
+```{r}
+# Indeces: 70% missingness
+
+TA_v1_70 = which( df_FPR$conditions %in% one_view_c[which(one_view_c %in% prop_0.7)] )
+
+TA_v2_70 = which( df_FPR$conditions %in% two_views_c[which(two_views_c %in% prop_0.7)] )
+
+TA_v3_70 = which( df_FPR$conditions %in% three_views_c[which(three_views_c %in% prop_0.7)] )
+
+TA_v4_70 = which( df_FPR$conditions %in% four_views_c[which(four_views_c %in% prop_0.7)] )
+
+# There is no results for four views with 70% missingness
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FPR[,-1][TA_v1_70,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FPR[,-1][TA_v2_70,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FPR[,-1][TA_v3_70,], 1, mean), na.rm = T),
+                  # n views = 4
+                  0), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_70),
+                  
+                  # n views = 2
+                  length(TA_v2_70),
+                  
+                  # n views = 3
+                  length(TA_v3_70),
+                  
+                  # n views = 4
+                  length(TA_v4_70) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FPR$conditions[TA_v1_70],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FPR$conditions[TA_v2_70],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FPR$conditions[TA_v3_70],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_FPR$conditions[TA_v4_70],], na.rm = T)
+                  
+                  )) / 10 )
+                
+                )
+
+
+df[df == "NaN"] <- 0
+
+# Table
+df %>%   
+  kbl(caption = "False positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### Table 3 & 4 : view type and view size
+
+#### Table 3 : n views = 1
+
+```{r}
+
+# Table 3: n views = 1
+
+# Indeces
+
+# view 1
+v1_1 = c(1,5)
+
+# view 2
+v1_2 = c(2,6)
+
+# view 3
+v1_3 = c(3,7)
+
+# view 4
+v1_4 = c(4,8)
+
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FPR[,-1][v1_1,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FPR[,-1][v1_2,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FPR[,-1][v1_3,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_FPR[,-1][v1_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(v1_1),
+                  
+                  # n views = 2
+                  length(v1_2),
+                  
+                  # n views = 3
+                  length(v1_3),
+                  
+                  # n views = 4
+                  length(v1_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v1_1],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v1_2],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v1_3],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_FPR$conditions[v1_4],]))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+
+```
+
+#### Table 4 : n views = 2
+
+
+```{r}
+
+# Indeces
+
+# views 1,2
+v2_1_2 = c(9,15,21, 27)
+
+# views 1,3
+v2_1_3 = c(10,16,22, 28)
+
+# views 2,3
+v2_2_3 = c(12, 18, 24, 30)
+
+# views 1,4
+v2_1_4 = c(11, 17, 23, 29)
+
+# views 2,4
+v2_2_4 = c(13, 19, 25, 31)
+
+# views 3,4
+v2_3_4 = c(14, 20, 26, 32)
+
+
+# Dataframe 
+df = data.frame(Views = c("1,2","1,3", "2,3", "1,4", "2,4", "3,4"),
+                Means = round( c( 
+                  # views 1,2
+                  mean(apply(df_FPR[,-1][v2_1_2,], 1, mean), na.rm = T),
+                  # views 1,3
+                  mean(apply(df_FPR[,-1][v2_1_3,], 1, mean), na.rm = T),
+                  # views 1,4
+                  mean(apply(df_FPR[,-1][v2_2_3,], 1, mean), na.rm = T),
+                  # views 2,3
+                  mean(apply(df_FPR[,-1][v2_1_4,], 1, mean), na.rm = T),
+                  # views 2,4
+                  mean(apply(df_FPR[,-1][v2_2_4], 1, mean), na.rm = T),
+                  # views 3,4
+                  mean(apply(df_FPR[,-1][v2_3_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+
+                  length(v2_1_2),
+
+                  length(v2_1_3),
+                  
+                  length(v2_2_3),
+                  
+                  length(v2_1_4),
+                  
+                  length(v2_2_4),
+                  
+                  length(v2_3_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v2_1_2],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v2_1_3],], 1, mean), na.rm = T),
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v2_2_3],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v2_1_4],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v2_2_4],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[df_FPR$conditions[v2_3_4],], 1, mean))) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False positive rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+```
+
+---
+title: ''
+output: html_document
+---
+
+### FDR
+
+#### Preparation
+
+```{r, echo = F}
+
+# Create a matrix with rows = 100, and clmns = 80
+
+mat_FDR = matrix(measures$FDR, ncol = 80)
+
+#test.accuracy.table = data.frame(mean = apply(mat_FDR, 2, mean, na.rm = TRUE), sd = apply(mat_FDR, 2, sd, na.rm = TRUE))
+
+# Change NaN to NA
+# test.accuracy.table[which(test.accuracy.table[,1] == "NaN"), 1] <- NA
+
+# Transpose matrix with TA values
+mat_FDR_t = t(mat_FDR)
+
+# Add columns with condition index and bind in dataframe "df_FDR"
+df_FDR = data.frame(conditions = 1:80, mat_FDR_t)
+
+# Exclude rows with only NAs
+excl_only_NAs = function( x ){ ifelse( names( table( is.na( x ) )[1] ) == "TRUE", FALSE, TRUE )}
+                           
+# Assign indices with conditions to retain
+retain_cond = apply(df_FDR[,-1], 1, excl_only_NAs)
+
+# Subset retained conditions
+df_FDR = df_FDR[ retain_cond, ]   
+
+```
+
+
+#### Table 1: Number of views with missingness
+
+```{r, echo = F}
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FDR[,-1][one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FDR[,-1][which( df_FDR$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FDR[,-1][which( df_FDR$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_FDR[,-1][which( df_FDR$conditions %in% four_views_c),], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(one_view_c),
+                  
+                  # n views = 2
+                  sum(df_FDR$conditions %in% two_views_c),
+                  
+                  # n views = 3
+                  sum(df_FDR$conditions %in% three_views_c),
+                  
+                  # n views = 4
+                  sum(df_FDR$conditions %in% four_views_c)),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[one_view_c,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[which( df_FDR$conditions %in% two_views_c),], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[which( df_FDR$conditions %in% three_views_c),], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[which( df_FDR$conditions %in% four_views_c),], 1, mean), na.rm = T))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False discovery rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r}
+# Note: Table shows mean values across conditions for each level of views with missing data
+```
+
+#### Table 2 : Missingness proportions
+
+```{r}
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:4,
+              9:14,
+              33:36,
+              65)
+  
+prop_0.7 = c( 5:8,
+              27:32,
+              61:64,
+              80)
+```
+
+#### 30% missingness
+
+```{r}
+# Indeces: 30% missingness
+
+TA_v1_30 = which( df_FDR$conditions %in% one_view_c[which(one_view_c %in% prop_0.3)] )
+
+TA_v2_30 = which( df_FDR$conditions %in% two_views_c[which(two_views_c %in% prop_0.3)] )
+
+TA_v3_30 = which( df_FDR$conditions %in% three_views_c[which(three_views_c %in% prop_0.3)] )
+
+TA_v4_30 = which( df_FDR$conditions %in% four_views_c[which(four_views_c %in% prop_0.3)] )
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FDR[,-1][TA_v1_30,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FDR[,-1][TA_v2_30,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FDR[,-1][TA_v3_30,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_FDR[,-1][TA_v4_30,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_30),
+                  
+                  # n views = 2
+                  length(TA_v2_30),
+                  
+                  # n views = 3
+                  length(TA_v3_30),
+                  
+                  # n views = 4
+                  length(TA_v4_30) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FDR$conditions[TA_v1_30],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FDR$conditions[TA_v2_30],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FDR$conditions[TA_v3_30],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_FDR$conditions[TA_v1_30],])) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False discovery rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### 70% missingness
+
+```{r}
+# Indeces: 70% missingness
+
+TA_v1_70 = which( df_FDR$conditions %in% one_view_c[which(one_view_c %in% prop_0.7)] )
+
+TA_v2_70 = which( df_FDR$conditions %in% two_views_c[which(two_views_c %in% prop_0.7)] )
+
+TA_v3_70 = which( df_FDR$conditions %in% three_views_c[which(three_views_c %in% prop_0.7)] )
+
+TA_v4_70 = which( df_FDR$conditions %in% four_views_c[which(four_views_c %in% prop_0.7)] )
+
+# There is no results for four views with 70% missingness
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FDR[,-1][TA_v1_70,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FDR[,-1][TA_v2_70,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FDR[,-1][TA_v3_70,], 1, mean), na.rm = T),
+                  # n views = 4
+                  0), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(TA_v1_70),
+                  
+                  # n views = 2
+                  length(TA_v2_70),
+                  
+                  # n views = 3
+                  length(TA_v3_70),
+                  
+                  # n views = 4
+                  length(TA_v4_70) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FDR$conditions[TA_v1_70],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FDR$conditions[TA_v2_70],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FDR$conditions[TA_v3_70],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_FDR$conditions[TA_v4_70],], na.rm = T)
+                  
+                  )) / 10 )
+                
+                )
+
+
+df[df == "NaN"] <- 0
+
+# Table
+df %>%   
+  kbl(caption = "False discovery rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+```
+
+#### Table 3 & 4 : view type and view size
+
+#### Table 3 : n views = 1
+
+```{r}
+
+# Table 3: n views = 1
+
+# Indeces
+
+# view 1
+v1_1 = c(1,5)
+
+# view 2
+v1_2 = c(2,6)
+
+# view 3
+v1_3 = c(3,7)
+
+# view 4
+v1_4 = c(4,8)
+
+
+# Dataframe 
+df = data.frame(Views = 1:4,
+                Means = round( c( 
+                  # n views = 1
+                  mean(apply(df_FDR[,-1][v1_1,], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(df_FDR[,-1][v1_2,], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(df_FDR[,-1][v1_3,], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(df_FDR[,-1][v1_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+                  # n views = 1
+                  length(v1_1),
+                  
+                  # n views = 2
+                  length(v1_2),
+                  
+                  # n views = 3
+                  length(v1_3),
+                  
+                  # n views = 4
+                  length(v1_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v1_1],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v1_2],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v1_3],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(t(mat_CC)[df_FDR$conditions[v1_4],]))) / 10 )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False discovery rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+
+```
+
+#### Table 4 : n views = 2
+
+
+```{r}
+
+# Indeces
+
+# views 1,2
+v2_1_2 = c(9,15,21, 27)
+
+# views 1,3
+v2_1_3 = c(10,16,22, 28)
+
+# views 2,3
+v2_2_3 = c(12, 18, 24, 30)
+
+# views 1,4
+v2_1_4 = c(11, 17, 23, 29)
+
+# views 2,4
+v2_2_4 = c(13, 19, 25, 31)
+
+# views 3,4
+v2_3_4 = c(14, 20, 26, 32)
+
+
+# Dataframe 
+df = data.frame(Views = c("1,2","1,3", "2,3", "1,4", "2,4", "3,4"),
+                Means = round( c( 
+                  # views 1,2
+                  mean(apply(df_FDR[,-1][v2_1_2,], 1, mean), na.rm = T),
+                  # views 1,3
+                  mean(apply(df_FDR[,-1][v2_1_3,], 1, mean), na.rm = T),
+                  # views 1,4
+                  mean(apply(df_FDR[,-1][v2_2_3,], 1, mean), na.rm = T),
+                  # views 2,3
+                  mean(apply(df_FDR[,-1][v2_1_4,], 1, mean), na.rm = T),
+                  # views 2,4
+                  mean(apply(df_FDR[,-1][v2_2_4], 1, mean), na.rm = T),
+                  # views 3,4
+                  mean(apply(df_FDR[,-1][v2_3_4,], 1, mean), na.rm = T)), digits = 2),
+                
+                n_conditions = c(
+
+                  length(v2_1_2),
+
+                  length(v2_1_3),
+                  
+                  length(v2_2_3),
+                  
+                  length(v2_1_4),
+                  
+                  length(v2_2_4),
+                  
+                  length(v2_3_4) ),
+                  
+                  
+                  
+                  avrg_CC_percent = ( round( c( 
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v2_1_2],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v2_1_3],], 1, mean), na.rm = T),
+                  # n views = 1
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v2_2_3],], 1, mean), na.rm = T),
+                  # n views = 2
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v2_1_4],], 1, mean), na.rm = T),
+                  # n views = 3
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v2_2_4],], 1, mean), na.rm = T),
+                  # n views = 4
+                  mean(apply(t(mat_CC)[df_FDR$conditions[v2_3_4],], 1, mean))) / 10 ) )
+                
+                )
+
+
+# Table
+df %>%   
+  kbl(caption = "False discovery rate", digits = 2, row.names = F) %>%
+  kable_classic( full_width = F, html_font = "Times New Roman", position = "left")
+
+
+
+```
+
+
+

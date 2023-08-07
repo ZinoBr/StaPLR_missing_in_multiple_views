@@ -1,0 +1,975 @@
+---
+title: "Plots & Tables: All methods (V3)"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(kableExtra)
+
+# Load design matrix
+miss.conditions = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Design Matrix Revision/miss.conditions.rds")
+
+# Load results for each method
+
+meta_mean = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta mean/meta_mean_outcome")
+
+meta_cv = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta CV/meta_cv_outcome")
+
+meta_pmm = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta PMM/meta_pmm_outcome")
+
+meta_forest = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta forest/meta_forest_outcome")
+
+CCA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+
+CDA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CDA/CDA_outcome")
+
+
+# Assign indeces by number of views with missing dta
+
+one_view = c(1:800)
+two_views = c(801:3200)
+three_views = c(3201:6400)
+four_views = c(6401:8000)
+```
+
+
+```{r, echo = F}
+
+# INDECES INDICATING PRESENCE OF NOISE VIEW
+
+# Assigning indices for noise variables for each level of views with missingness 
+
+# One view
+
+    one.view.ind = as.list(c(1:8)[grepl(4, miss.conditions[1:8,1])])
+    
+    for (i in 1:2){
+      j = one.view.ind[[i]] * 100 
+      one.view.ind[[i]] = (j - 99) : j  
+    }
+    
+    one.view.ind = unlist(one.view.ind)
+
+# Two views
+    
+    two.views.ind = as.list(c(9:32)[grepl(4, miss.conditions[9:32,1])])
+    
+    for (i in 1:12){
+      j = two.views.ind[[i]] * 100 
+      two.views.ind[[i]] = (j - 99) : j  
+      }
+    
+    two.views.ind = unlist(two.views.ind)
+
+# Three views
+        
+    three.views.ind = as.list(c(33:64)[grepl(4, miss.conditions[33:64,1])])
+    
+    for (i in 1:24 ){
+      j = three.views.ind[[i]] * 100 
+      three.views.ind[[i]] = (j - 99) : j 
+    }
+    
+    three.views.ind = unlist(three.views.ind)
+
+# Four views
+        
+    four.views.ind = as.list(c(65:80)[grepl(4, miss.conditions[65:80,1])])
+    
+    for (i in 1:16 ){
+      j = four.views.ind[[i]] * 100 
+      four.views.ind[[i]] = (j - 99) : j 
+    }
+    
+    four.views.ind = unlist(four.views.ind)
+```
+
+
+### Number of complete cases
+
+```{r, echo = F, eval=F}
+load("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/CompleteCases/n_completecases.RData")
+
+n_completecases_mat = matrix(n_completecases, ncol = 80)
+
+CC.table = data.frame(mean = apply(n_completecases_mat, 2, mean), 
+                                 sd = apply(n_completecases_mat, 2, sd))
+
+boxplot(n_completecases_mat, 
+        # ylim = c(0.6,0.9),
+            xlab = "Design matrix row",
+            at =c(c(1:8), c(11:34) , c(37:68), c(71:86)) )
+
+```
+
+### Test Accuracy 
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$TestAccuracy, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$TestAccuracy[one_view] , 
+                meta_cv$TestAccuracy[one_view] , 
+                meta_pmm$TestAccuracy[one_view] , 
+                meta_forest$TestAccuracy[one_view] , 
+                CCA$TestAccuracy[one_view] , 
+                CDA$TestAccuracy[one_view] ,
+                
+                meta_mean$TestAccuracy[two_views] , 
+                meta_cv$TestAccuracy[two_views] , 
+                meta_pmm$TestAccuracy[two_views] , 
+                meta_forest$TestAccuracy[two_views] , 
+                CCA$TestAccuracy[two_views] , 
+                CDA$TestAccuracy[two_views] ,
+                
+                meta_mean$TestAccuracy[three_views] , 
+                meta_cv$TestAccuracy[three_views] , 
+                meta_pmm$TestAccuracy[three_views] , 
+                meta_forest$TestAccuracy[three_views] , 
+                CCA$TestAccuracy[three_views] , 
+                CDA$TestAccuracy[three_views] ,
+                
+                meta_mean$TestAccuracy[four_views] , 
+                meta_cv$TestAccuracy[four_views] , 
+                meta_pmm$TestAccuracy[four_views] , 
+                meta_forest$TestAccuracy[four_views] , 
+                CCA$TestAccuracy[four_views] , 
+                CDA$TestAccuracy[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0.0,1.0),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```
+
+
+```{r}
+# boxplots
+boxplot( list(  meta_mean$TestAccuracy[one_view] , 
+                meta_cv$TestAccuracy[one_view] , 
+                meta_pmm$TestAccuracy[one_view] , 
+                meta_forest$TestAccuracy[one_view] , 
+                CCA$TestAccuracy[one_view] , 
+                CDA$TestAccuracy[one_view] ,
+                
+                meta_mean$TestAccuracy[two_views] , 
+                meta_cv$TestAccuracy[two_views] , 
+                meta_pmm$TestAccuracy[two_views] , 
+                meta_forest$TestAccuracy[two_views] , 
+                CCA$TestAccuracy[two_views] , 
+                CDA$TestAccuracy[two_views] ,
+                
+                meta_mean$TestAccuracy[three_views] , 
+                meta_cv$TestAccuracy[three_views] , 
+                meta_pmm$TestAccuracy[three_views] , 
+                meta_forest$TestAccuracy[three_views] , 
+                CCA$TestAccuracy[three_views] , 
+                CDA$TestAccuracy[three_views] ,
+                
+                meta_mean$TestAccuracy[four_views] , 
+                meta_cv$TestAccuracy[four_views] , 
+                meta_pmm$TestAccuracy[four_views] , 
+                meta_forest$TestAccuracy[four_views] , 
+                CCA$TestAccuracy[four_views] , 
+                CDA$TestAccuracy[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0.0,1.0),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+par(mfrow = c(1,2))
+
+boxplot( list(  meta_mean$TestAccuracy[one_view] , 
+                meta_cv$TestAccuracy[one_view] , 
+                meta_pmm$TestAccuracy[one_view] , 
+                meta_forest$TestAccuracy[one_view] , 
+                CCA$TestAccuracy[one_view] , 
+                CDA$TestAccuracy[one_view] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 1),
+            ylim = c(0.0,1.0),
+            #at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE # not showing outliers 
+         )
+
+boxplot( list(  meta_mean$TestAccuracy[two_views] , 
+                meta_cv$TestAccuracy[two_views] , 
+                meta_pmm$TestAccuracy[two_views] , 
+                meta_forest$TestAccuracy[two_views] , 
+                CCA$TestAccuracy[two_views] , 
+                CDA$TestAccuracy[two_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 1),
+            ylim = c(0.0,1.0),
+            #at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE # not showing outliers 
+         )
+
+boxplot( list(   meta_mean$TestAccuracy[three_views] , 
+                meta_cv$TestAccuracy[three_views] , 
+                meta_pmm$TestAccuracy[three_views] , 
+                meta_forest$TestAccuracy[three_views] , 
+                CCA$TestAccuracy[three_views] , 
+                CDA$TestAccuracy[three_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 1),
+            ylim = c(0.0,1.0),
+            #at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE # not showing outliers 
+         )
+
+boxplot( list(  meta_mean$TestAccuracy[four_views] , 
+                meta_cv$TestAccuracy[four_views] , 
+                meta_pmm$TestAccuracy[four_views] , 
+                meta_forest$TestAccuracy[four_views] , 
+                CCA$TestAccuracy[four_views] , 
+                CDA$TestAccuracy[four_views]),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 1),
+            ylim = c(0.0,1.0),
+            #at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE # not showing outliers 
+         )
+```
+
+### Mean Squared Error of Probabilities (MSEP)
+
+#### General
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$MSEP, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$MSEP[one_view] , 
+                meta_cv$MSEP[one_view] , 
+                meta_pmm$MSEP[one_view] , 
+                meta_forest$MSEP[one_view] , 
+                CCA$MSEP[one_view] , 
+                CDA$MSEP[one_view] ,
+                
+                meta_mean$MSEP[two_views] , 
+                meta_cv$MSEP[two_views] , 
+                meta_pmm$MSEP[two_views] , 
+                meta_forest$MSEP[two_views] , 
+                CCA$MSEP[two_views] , 
+                CDA$MSEP[two_views] ,
+                
+                meta_mean$MSEP[three_views] , 
+                meta_cv$MSEP[three_views] , 
+                meta_pmm$MSEP[three_views] , 
+                meta_forest$MSEP[three_views] , 
+                CCA$MSEP[three_views] , 
+                CDA$MSEP[three_views] ,
+                
+                meta_mean$MSEP[four_views] , 
+                meta_cv$MSEP[four_views] , 
+                meta_pmm$MSEP[four_views] , 
+                meta_forest$MSEP[four_views] , 
+                CCA$MSEP[four_views] , 
+                CDA$MSEP[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0,0.11),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```
+
+
+### Mean proportion of correctly selected views (MPsV)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$MPsV, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$MPsV[one_view] , 
+                meta_cv$MPsV[one_view] , 
+                meta_pmm$MPsV[one_view] , 
+                meta_forest$MPsV[one_view] , 
+                CCA$MPsV[one_view] , 
+                CDA$MPsV[one_view] ,
+                
+                meta_mean$MPsV[two_views] , 
+                meta_cv$MPsV[two_views] , 
+                meta_pmm$MPsV[two_views] , 
+                meta_forest$MPsV[two_views] , 
+                CCA$MPsV[two_views] , 
+                CDA$MPsV[two_views] ,
+                
+                meta_mean$MPsV[three_views] , 
+                meta_cv$MPsV[three_views] , 
+                meta_pmm$MPsV[three_views] , 
+                meta_forest$MPsV[three_views] , 
+                CCA$MPsV[three_views] , 
+                CDA$MPsV[three_views] ,
+                
+                meta_mean$MPsV[four_views] , 
+                meta_cv$MPsV[four_views] , 
+                meta_pmm$MPsV[four_views] , 
+                meta_forest$MPsV[four_views] , 
+                CCA$MPsV[four_views] , 
+                CDA$MPsV[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0,1),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            #outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```
+
+
+### True Positive Rate (TPR)
+
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$TPR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$TPR[one_view] , 
+                meta_cv$TPR[one_view] , 
+                meta_pmm$TPR[one_view] , 
+                meta_forest$TPR[one_view] , 
+                CCA$TPR[one_view] , 
+                CDA$TPR[one_view] ,
+                
+                meta_mean$TPR[two_views] , 
+                meta_cv$TPR[two_views] , 
+                meta_pmm$TPR[two_views] , 
+                meta_forest$TPR[two_views] , 
+                CCA$TPR[two_views] , 
+                CDA$TPR[two_views] ,
+                
+                meta_mean$TPR[three_views] , 
+                meta_cv$TPR[three_views] , 
+                meta_pmm$TPR[three_views] , 
+                meta_forest$TPR[three_views] , 
+                CCA$TPR[three_views] , 
+                CDA$TPR[three_views] ,
+                
+                meta_mean$TPR[four_views] , 
+                meta_cv$TPR[four_views] , 
+                meta_pmm$TPR[four_views] , 
+                meta_forest$TPR[four_views] , 
+                CCA$TPR[four_views] , 
+                CDA$TPR[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0,1),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```
+
+
+### False positive rate (FPR) 
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$FPR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$FPR[one_view] , 
+                meta_cv$FPR[one_view] , 
+                meta_pmm$FPR[one_view] , 
+                meta_forest$FPR[one_view] , 
+                CCA$FPR[one_view] , 
+                CDA$FPR[one_view] ,
+                
+                meta_mean$FPR[two_views] , 
+                meta_cv$FPR[two_views] , 
+                meta_pmm$FPR[two_views] , 
+                meta_forest$FPR[two_views] , 
+                CCA$FPR[two_views] , 
+                CDA$FPR[two_views] ,
+                
+                meta_mean$FPR[three_views] , 
+                meta_cv$FPR[three_views] , 
+                meta_pmm$FPR[three_views] , 
+                meta_forest$FPR[three_views] , 
+                CCA$FPR[three_views] , 
+                CDA$FPR[three_views] ,
+                
+                meta_mean$FPR[four_views] , 
+                meta_cv$FPR[four_views] , 
+                meta_pmm$FPR[four_views] , 
+                meta_forest$FPR[four_views] , 
+                CCA$FPR[four_views] , 
+                CDA$FPR[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0,1),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```
+
+### False discovery rate (FDR)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$FDR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$FDR[one_view] , 
+                meta_cv$FDR[one_view] , 
+                meta_pmm$FDR[one_view] , 
+                meta_forest$FDR[one_view] , 
+                CCA$FDR[one_view] , 
+                CDA$FDR[one_view] ,
+                
+                meta_mean$FDR[two_views] , 
+                meta_cv$FDR[two_views] , 
+                meta_pmm$FDR[two_views] , 
+                meta_forest$FDR[two_views] , 
+                CCA$FDR[two_views] , 
+                CDA$FDR[two_views] ,
+                
+                meta_mean$FDR[three_views] , 
+                meta_cv$FDR[three_views] , 
+                meta_pmm$FDR[three_views] , 
+                meta_forest$FDR[three_views] , 
+                CCA$FDR[three_views] , 
+                CDA$FDR[three_views] ,
+                
+                meta_mean$FDR[four_views] , 
+                meta_cv$FDR[four_views] , 
+                meta_pmm$FDR[four_views] , 
+                meta_forest$FDR[four_views] , 
+                CCA$FDR[four_views] , 
+                CDA$FDR[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(0,1),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```
+
+
+### Log computation Time (logCompTime)
+
+
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$logCompTime, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "logCompTime Means : General", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+```{r, echo = F}
+# boxplots
+boxplot( list(  meta_mean$logCompTime[one_view] , 
+                meta_cv$logCompTime[one_view] , 
+                meta_pmm$logCompTime[one_view] , 
+                meta_forest$logCompTime[one_view] , 
+                CCA$logCompTime[one_view] , 
+                CDA$logCompTime[one_view] ,
+                
+                meta_mean$logCompTime[two_views] , 
+                meta_cv$logCompTime[two_views] , 
+                meta_pmm$logCompTime[two_views] , 
+                meta_forest$logCompTime[two_views] , 
+                CCA$logCompTime[two_views] , 
+                CDA$logCompTime[two_views] ,
+                
+                meta_mean$logCompTime[three_views] , 
+                meta_cv$logCompTime[three_views] , 
+                meta_pmm$logCompTime[three_views] , 
+                meta_forest$logCompTime[three_views] , 
+                CCA$logCompTime[three_views] , 
+                CDA$logCompTime[three_views] ,
+                
+                meta_mean$logCompTime[four_views] , 
+                meta_cv$logCompTime[four_views] , 
+                meta_pmm$logCompTime[four_views] , 
+                meta_forest$logCompTime[four_views] , 
+                CCA$logCompTime[four_views] , 
+                CDA$logCompTime[four_views] ),
+          
+            las = 2, 
+            names = rep(c("Mmean","Mcv", "Mpmm","Mforest","CCA", "CDA")  , times = 4),
+            ylim = c(4,9),
+            at =c(1:6, 8:13, 15:20, 22:27),
+            boxwex=.5,
+            outline=FALSE, # not showing outliers 
+            main = "General"
+         )
+
+```

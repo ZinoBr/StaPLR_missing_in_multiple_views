@@ -1,0 +1,1620 @@
+---
+title: "Plots & Tables: All methods"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(kableExtra)
+
+# Load design matrix
+miss.conditions = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Design Matrix Revision/miss.conditions.rds")
+
+# Load results for each method
+
+meta_mean = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta mean/meta_mean_outcome")
+
+meta_cv = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta CV/meta_cv_outcome")
+
+meta_pmm = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta PMM/meta_pmm_outcome")
+
+meta_forest = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta forest/meta_forest_outcome")
+
+CCA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+
+CDA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CDA/CDA_outcome")
+```
+
+
+```{r, echo=F}
+### Assign indeces by number of views with missing dta
+
+one_view = c(1:800)
+two_views = c(801:3200)
+three_views = c(3201:6400)
+four_views = c(6401:8000)
+```
+
+
+### Indices discriminating whether noise view has missing values
+
+```{r, echo = F}
+
+# Assigning indices for noise variables for each level of views with missingness 
+
+# One view
+
+    one.view.ind = as.list(c(1:8)[grepl(4, miss.conditions[1:8,1])])  # the function grepl() is used to identify which conditions in the design matrix include the fourth view as a view with missing values
+    
+    for (i in 1:2){
+      j = one.view.ind[[i]] * 100 
+      one.view.ind[[i]] = (j - 99) : j  
+    }
+    
+    one.view.ind = unlist(one.view.ind)
+
+# Two views
+    
+    two.views.ind = as.list(c(9:32)[grepl(4, miss.conditions[9:32,1])])
+    
+    for (i in 1:12){
+      j = two.views.ind[[i]] * 100 
+      two.views.ind[[i]] = (j - 99) : j  
+      }
+    
+    two.views.ind = unlist(two.views.ind)
+
+# Three views
+        
+    three.views.ind = as.list(c(33:64)[grepl(4, miss.conditions[33:64,1])])
+    
+    for (i in 1:24 ){
+      j = three.views.ind[[i]] * 100 
+      three.views.ind[[i]] = (j - 99) : j 
+    }
+    
+    three.views.ind = unlist(three.views.ind)
+
+# Four views
+        
+    four.views.ind = as.list(c(65:80)[grepl(4, miss.conditions[65:80,1])])
+    
+    for (i in 1:16 ){
+      j = four.views.ind[[i]] * 100 
+      four.views.ind[[i]] = (j - 99) : j 
+    }
+    
+    four.views.ind = unlist(four.views.ind)
+```
+
+### Indices discriminating between proportion of missingness
+
+```{r, echo = F}
+
+# The indices are based on which conditions in the design matrix have an equal 
+# proportion of missing values across all views, and the size of the proportion
+
+prop_0.3 = c( 1:400,
+              801:1400,
+              3201:3600,
+              6401:6500)
+  
+prop_0.7 = c( 401:800,
+              2601:3200,
+              6001:6400,
+              7901:8000)
+
+```
+
+
+
+### Test Accuracy 
+
+```{r, echo = F} 
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$TestAccuracy, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+#### General (30%)
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( n_views[j] ) %in% prop_0.3
+    
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : General (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### General (70%)
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( n_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : General (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *with* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( noise_views[j] ) %in% prop_0.3 
+    
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : Noise view with missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *with* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( noise_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : Noise view with missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *without* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+        selection_prop_03 = noise_without_miss %in% prop_0.3 
+    
+        # NOTE: Here the indeces for conditions with the noise view is subtracted
+        table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_03 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : Noise view without missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *without* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+        selection_prop_07 = noise_without_miss %in% prop_0.7
+    
+        # NOTE: Here the indeces for conditions with the noise view is subtracted
+        table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_07 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy Means : Noise view without missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+### Mean Squared Error of Probabilities (MSEP)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$MSEP, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+#### General (30%)
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( n_views[j] ) %in% prop_0.3
+    
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : General (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### General (70%)
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( n_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : General (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *with* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( noise_views[j] ) %in% prop_0.3 
+        
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : Noise view with missingness(30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *with* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( noise_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : Noise view with missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *without* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+        selection_prop_03 = noise_without_miss %in% prop_0.3 
+        
+        # NOTE: Here the indeces for conditions with the noise view is subtracted
+        table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_03 ] ] ) 
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : Noise view without missingness(30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *without* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+        
+        selection_prop_07 = noise_without_miss %in% prop_0.7
+        
+        # NOTE: Here the indeces for conditions with the noise view is subtracted
+        table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_07 ] ] )    
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP Means : Noise view without missingness(70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+### Mean proportion of correctly selected views (MPsV)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$MPsV, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+#### General (30%)
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( n_views[j] ) %in% prop_0.3
+    
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : General (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### General (70%)
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( n_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : General (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *with* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( noise_views[j] ) %in% prop_0.3 
+    
+    table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : Noise view with missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *with* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+          selection_prop_07 = get( noise_views[j] ) %in% prop_0.7
+    
+          table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : Noise view with missingness (70%) ", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *without* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+    noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+    selection_prop_03 = noise_without_miss %in% prop_0.3 
+    
+    # NOTE: Here the indeces for conditions with the noise view is subtracted
+    table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_03 ] ] )          
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : Noise view without missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+#### Noise view *without* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+         noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+        selection_prop_07 = noise_without_miss %in% prop_0.7
+        
+        # NOTE: Here the indeces for conditions with the noise view is subtracted
+        table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_07 ] ] )  
+    
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV Means : Noise view without missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+### True Positive Rate (TPR)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$TPR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+
+#### General (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+            selection_prop_03 = get( n_views[j] ) %in% prop_0.3
+    
+            table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : General (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### General (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( n_views[j] ) %in% prop_0.7
+    
+    table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : General (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *with* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( noise_views[j] ) %in% prop_0.3 
+    
+    table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : Noise view with missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+#### Noise view *with* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( noise_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : Noise view with missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+#### Noise view *without* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+    selection_prop_03 = noise_without_miss %in% prop_0.3 
+    
+    # NOTE: Here the indeces for conditions with the noise view is subtracted
+    table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_03 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : Noise view without missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *without* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+            noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+          selection_prop_07 = noise_without_miss %in% prop_0.7
+          
+          # NOTE: Here the indeces for conditions with the noise view is subtracted
+          table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_07 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR Means : Noise view without missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+### False positive rate (FPR) 
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$FPR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+
+#### General (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+            selection_prop_03 = get( n_views[j] ) %in% prop_0.3
+    
+            table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : General (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### General (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( n_views[j] ) %in% prop_0.7
+    
+    table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : General (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *with* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( noise_views[j] ) %in% prop_0.3 
+    
+    table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : Noise view with missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+#### Noise view *with* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( noise_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : Noise view with missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+#### Noise view *without* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss = setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+    selection_prop_03 = noise_without_miss %in% prop_0.3 
+    
+    # NOTE: Here the indeces for conditions with the noise view is subtracted
+    table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_03 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : Noise view without missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *without* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+            noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+          selection_prop_07 = noise_without_miss %in% prop_0.7
+          
+          # NOTE: Here the indeces for conditions with the noise view is subtracted
+          table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_07 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR Means : Noise view without missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+### False discovery rate (FDR)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$FDR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+
+
+#### General (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+            selection_prop_03 = get( n_views[j] ) %in% prop_0.3
+    
+            table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : General (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### General (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+n_views = c("one_view", "two_views", "three_views", "four_views")
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( n_views[j] ) %in% prop_0.7
+    
+    table[j,i] = mean ( matrices[[i]] [ get( n_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : General (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *with* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_03 = get( noise_views[j] ) %in% prop_0.3 
+    
+    table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_03 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : Noise view with missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+#### Noise view *with* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        selection_prop_07 = get( noise_views[j] ) %in% prop_0.7
+    
+        table[j,i] = mean ( matrices[[i]] [ get( noise_views[j] ) [ selection_prop_07 ] ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : Noise view with missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+#### Noise view *without* missingness (30%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+        noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+    selection_prop_03 = noise_without_miss %in% prop_0.3 
+    
+    # NOTE: Here the indeces for conditions with the noise view is subtracted
+    table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_03 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : Noise view without missingness (30%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Noise view *without* missingness (70%)
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# indices for conditions where noise view has missingness
+noise_views = c( "one.view.ind", "two.views.ind", "three.views.ind", "four.views.ind" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+      
+            noise_without_miss =setdiff( get( n_views[j]), get ( noise_views[j] ) )  
+    
+          selection_prop_07 = noise_without_miss %in% prop_0.7
+          
+          # NOTE: Here the indeces for conditions with the noise view is subtracted
+          table[j,i] = mean ( matrices[[i]] [ noise_without_miss [ selection_prop_07 ] ] )  
+        
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = n_views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR Means : Noise view without missingness (70%)", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+

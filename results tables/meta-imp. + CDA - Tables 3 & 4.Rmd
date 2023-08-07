@@ -1,0 +1,730 @@
+---
+title: "Plots & Tables: All methods"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(kableExtra)
+
+# Load design matrix
+miss.conditions = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Design Matrix Revision/miss.conditions.rds")
+
+# Load results for each method
+
+meta_mean = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta mean/meta_mean_outcome")
+
+meta_cv = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta CV/meta_cv_outcome")
+
+meta_pmm = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta PMM/meta_pmm_outcome")
+
+meta_forest = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta forest/meta_forest_outcome")
+
+CCA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+
+CDA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CDA/CDA_outcome")
+```
+
+
+```{r, echo=F}
+### Indeces assignment by a) number of views and b) view(s) with missing data
+
+one_view_one = c(1:100, 401:500)
+one_view_two = c(101:200, 501:600)
+one_view_three = c(201:300, 601:700)
+one_view_four = c(301:400, 701:800)
+
+two_views_one_two = c(801:900, 1401:1500, 2001:2100, 2601:2700)
+two_views_one_three = ( two_views_one_two + 100 )
+two_views_one_four = ( two_views_one_three + 100 )
+two_views_two_three = ( two_views_one_four + 100 )
+two_views_two_four = ( two_views_two_three + 100 )
+two_views_three_four = ( two_views_two_four + 100 )
+
+```
+
+
+### Test Accuracy 
+
+
+```{r, echo = F} 
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$TestAccuracy, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+#### Number of views = 1
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c( "one_view_one", 
+           "one_view_two", 
+           "one_view_three", 
+           "one_view_four" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = c(1:4)
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy: Size of views and Signal / Noise differentiation for Nviews = 1", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Number of views = 2
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 6, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c(
+  "two_views_one_two",
+  "two_views_one_three",
+  "two_views_one_four",
+  "two_views_two_three",
+  "two_views_two_four",
+  "two_views_three_four"
+)
+  
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:6 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "Test Accuracy: Size of views and Signal / Noise differentiation for Nviews = 2", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+### Mean Squared Error of Probabilities (MSEP)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$MSEP, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+#### Number of views = 1
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c( "one_view_one", 
+           "one_view_two", 
+           "one_view_three", 
+           "one_view_four" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = c(1:4)
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP: Size of views and Signal / Noise differentiation for Nviews = 1", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Number of views = 2
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 6, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c(
+  "two_views_one_two",
+  "two_views_one_three",
+  "two_views_one_four",
+  "two_views_two_three",
+  "two_views_two_four",
+  "two_views_three_four"
+)
+  
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:6 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MSEP: Size of views and Signal / Noise differentiation for Nviews = 2", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+
+### Mean proportion of correctly selected views (MPsV)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$MPsV, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+#### Number of views = 1
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c( "one_view_one", 
+           "one_view_two", 
+           "one_view_three", 
+           "one_view_four" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = c(1:4)
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV: Size of views and Signal / Noise differentiation for Nviews = 1", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Number of views = 2
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 6, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c(
+  "two_views_one_two",
+  "two_views_one_three",
+  "two_views_one_four",
+  "two_views_two_three",
+  "two_views_two_four",
+  "two_views_three_four"
+)
+  
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:6 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "MPsV: Size of views and Signal / Noise differentiation for Nviews = 2", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+### True Positive Rate (TPR)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$TPR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+
+#### Number of views = 1
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c( "one_view_one", 
+           "one_view_two", 
+           "one_view_three", 
+           "one_view_four" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = c(1:4)
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR: Size of views and Signal / Noise differentiation for Nviews = 1", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Number of views = 2
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 6, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c(
+  "two_views_one_two",
+  "two_views_one_three",
+  "two_views_one_four",
+  "two_views_two_three",
+  "two_views_two_four",
+  "two_views_three_four"
+)
+  
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:6 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "TPR: Size of views and Signal / Noise differentiation for Nviews = 2", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+### False positive rate (FPR) 
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$FPR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+
+#### Number of views = 1
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c( "one_view_one", 
+           "one_view_two", 
+           "one_view_three", 
+           "one_view_four" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = c(1:4)
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR: Size of views and Signal / Noise differentiation for Nviews = 1", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Number of views = 2
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 6, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c(
+  "two_views_one_two",
+  "two_views_one_three",
+  "two_views_one_four",
+  "two_views_two_three",
+  "two_views_two_four",
+  "two_views_three_four"
+)
+  
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:6 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FPR: Size of views and Signal / Noise differentiation for Nviews = 2", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+### False discovery rate (FDR)
+
+```{r, echo = F}
+
+# Create 100 x 80 matrices for each method
+
+# Create an object with the names of objects containing the results of each method
+methods = c("meta_mean", "meta_cv", "meta_pmm", "meta_forest", "CCA", "CDA")
+
+# Create two list objects, one to collect matrices and one to collect means and SDs
+matrices = list()
+Means_SDs = list()
+
+# Create a second index j to update with each iteration
+j = 1
+
+for (i in methods) {
+  
+  # Create and save accuracy scores as matrix where each condition appears as a column
+  matrices[[j]] = matrix( get( paste0(i) )$FDR, ncol = 80)
+  
+  # Use matrices to create a table with mean and SD for each method
+  Means_SDs[[j]] = data.frame( mean = apply( matrices[[j]] , 2, mean),
+                               sd = apply( matrices[[j]] , 2, sd))
+  
+  # Assign names
+  names(matrices) [[j]] = paste0("mat_",i)
+  
+  names(Means_SDs) [[j]] = paste0("TA_table_", i)
+  
+  # Update second index j
+  j = j + 1 
+  
+}
+  
+```
+
+
+#### Number of views = 1
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 4, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c( "one_view_one", 
+           "one_view_two", 
+           "one_view_three", 
+           "one_view_four" )
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:4 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = c(1:4)
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR: Size of views and Signal / Noise differentiation for Nviews = 1", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
+
+#### Number of views = 2
+
+
+```{r, echo = F}
+
+# Create a matrix to collect values for the later table
+table = matrix(0, nrow = 6, ncol = 6)
+
+# object containing objects with indeces for each level of missingness in views
+views = c(
+  "two_views_one_two",
+  "two_views_one_three",
+  "two_views_one_four",
+  "two_views_two_three",
+  "two_views_two_four",
+  "two_views_three_four"
+)
+  
+
+for ( i in 1:6){  # columns
+  
+  for ( j in 1:6 ){ # rows
+    
+        table[j,i] = mean ( matrices[[i]] [ get( views[j] ) ] )
+                           
+    }
+} 
+
+# Transform to data frame and assign col- and row names
+table = as.data.frame(table)
+colnames(table) = methods
+rownames(table) = views
+
+# Print object as table        
+table %>%   
+  kbl(caption = "FDR: Size of views and Signal / Noise differentiation for Nviews = 2", digits = 2, row.names = TRUE) %>%
+  kable_classic( full_width = T, html_font = "Times New Roman", position = "left")
+
+```
+
