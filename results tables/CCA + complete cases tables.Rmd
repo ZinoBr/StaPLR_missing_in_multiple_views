@@ -10,11 +10,11 @@ library(knitr)
 library(kableExtra)
 
 # Load design matrix
-miss.conditions = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Design Matrix Revision/miss.conditions.rds")
+miss.conditions = readRDS("/.../miss.conditions.rds")
 
 # Mean imputation on the meta level
 
-measures = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+measures = readRDS("/.../CCA_outcome")
 
 
 # Assign indeces by number of views with missing data

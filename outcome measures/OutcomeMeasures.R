@@ -2,7 +2,7 @@
 ### Calculate measures of interest
 
 # Set working directory
-  setwd('/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/NEW/CCA/')
+  setwd('/.../CCA/')
     
 # Loading results from MI simulations
 
@@ -117,4 +117,4 @@ for (i in 1:s ) {
   
 }
 
-saveRDS(measures,"/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+saveRDS(measures,"/.../CCA_outcome")

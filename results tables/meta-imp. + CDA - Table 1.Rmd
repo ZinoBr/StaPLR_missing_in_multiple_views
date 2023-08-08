@@ -10,21 +10,21 @@ library(knitr)
 library(kableExtra)
 
 # Load design matrix
-miss.conditions = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Design Matrix Revision/miss.conditions.rds")
+miss.conditions = readRDS("/.../miss.conditions.rds")
 
 # Load results for each method
 
-meta_mean = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta mean/meta_mean_outcome")
+meta_mean = readRDS("/.../meta_mean_outcome")
 
-meta_cv = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta CV/meta_cv_outcome")
+meta_cv = readRDS("/.../meta_cv_outcome")
 
-meta_pmm = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta PMM/meta_pmm_outcome")
+meta_pmm = readRDS("/.../meta_pmm_outcome")
 
-meta_forest = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/Meta forest/meta_forest_outcome")
+meta_forest = readRDS("/.../meta_forest_outcome")
 
-CCA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CCA/CCA_outcome")
+CCA = readRDS("/.../CCA_outcome")
 
-CDA = readRDS("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/Outcome measures/CDA/CDA_outcome")
+CDA = readRDS("/.../CDA_outcome")
 
 
 # Assign indeces by number of views with missing dta
@@ -91,7 +91,7 @@ four_views = c(6401:8000)
 ### Number of complete cases
 
 ```{r, echo = F, eval=F}
-load("/Users/zinobrystowski/Desktop/Desktop/Leiden/LU Master/Internship/Results/CompleteCases/n_completecases.RData")
+load("/.../n_completecases.RData")
 
 n_completecases_mat = matrix(n_completecases, ncol = 80)
 
