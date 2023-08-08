@@ -95,6 +95,9 @@ incomplete_data$xtrain <- generate_missingness(data = complete_data$xtrain,
                                                overlap = TRUE,
                                                view.pred = view.predictors )
 
+# Analysis conditional on whether complete cases are present after data deletion process
+
+if ( sum(complete.cases( incomplete_data$xtrain ) ) != 0 ) {
 
 staplr_cca_mod = 
   function(id, view_index){
@@ -120,8 +123,13 @@ results$coefs <- coef(cca_fit)$`Level 2`[[1]][-1]
 results$ytest <- complete_data$ytest 
 results$ptest <- complete_data$ptest
 results$time <- time
-results$n_completecases <- dim(cca_fit$`Level 1`$CVs)[1]
+results$CC <- sum(complete.cases( incomplete_data$xtrain ) )
 
+}else{
+    results <- list()
+    results$CC <- sum(complete.cases( incomplete_data$xtrain))
+ }
+  
 save(results, file=paste0("/ ... /CCA/", TID, ".RData"))
 warnings()
 
