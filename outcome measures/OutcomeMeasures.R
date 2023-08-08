@@ -71,9 +71,7 @@ for (i in 1:s ) {
   
   ## False discovery rate (FDR) :   
   
-    if ( fpr == 0 & tpr == 0) 
-      { fdr = 0 } else 
-        { fdr =  n_selected_nv / ( n_selected_nv + n_selected_sv ) }
+   fdr =  n_selected_nv / ( n_selected_nv + n_selected_sv )
   
   ##  Mean proportion of correctly selected views (MPsV)
   
