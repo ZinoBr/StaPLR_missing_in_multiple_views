@@ -36,8 +36,9 @@ for (i in 1:s ) {
   # Load file
   load(file)
   
-  # If number of complete cases is zero, assign NA to measures and zero to compelte cases
-  if( results$CC == 0 ) {
+  # If complete cases were 0 or too small to run StaPLR under CCA, 
+  # assign NA to all outcome measures
+  if (length(results) == 1) {
     
     measures$TestAccuracy[i] = NA
     measures$MSEP[i] = NA
@@ -46,7 +47,7 @@ for (i in 1:s ) {
     measures$FPR[i] = NA
     measures$FDR[i] = NA
     measures$logCompTime[i] = NA
-    measures$n_completecases[i] = 0
+    measures$n_completecases[i] = results$CC
   
   }else{
   
